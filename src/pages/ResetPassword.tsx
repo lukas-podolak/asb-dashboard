@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -12,25 +12,26 @@ import {
 } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 
-const Login: React.FC = () => {
+const ResetPassword: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       setError('');
+      setSuccess(false);
       setLoading(true);
-      await login(email, password);
-      navigate('/dashboard');
+      await resetPassword(email);
+      setSuccess(true);
+      setEmail('');
     } catch (err: any) {
-      setError('Nepodařilo se přihlásit. Zkontrolujte email a heslo.');
+      setError('Nepodařilo se odeslat email pro obnovu hesla. Zkontrolujte email.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -51,15 +52,21 @@ const Login: React.FC = () => {
       <Container component="main" maxWidth="xs">
         <Paper elevation={3} sx={{ padding: 4 }}>
           <Typography component="h1" variant="h5" align="center" gutterBottom>
-            ASB Dashboard
+            Obnova hesla
           </Typography>
           <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
-            Přihlášení
+            Zadejte váš email a my vám pošleme odkaz pro obnovu hesla
           </Typography>
 
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Email pro obnovu hesla byl úspěšně odeslán. Zkontrolujte svou schránku.
             </Alert>
           )}
 
@@ -76,18 +83,6 @@ const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Heslo"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
             <Button
               type="submit"
               fullWidth
@@ -95,11 +90,11 @@ const Login: React.FC = () => {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? 'Přihlašování...' : 'Přihlásit se'}
+              {loading ? 'Odesílání...' : 'Odeslat email'}
             </Button>
             <Box sx={{ textAlign: 'center' }}>
-              <Link component={RouterLink} to="/reset-password" variant="body2">
-                Zapomněli jste heslo?
+              <Link component={RouterLink} to="/login" variant="body2">
+                Zpět na přihlášení
               </Link>
             </Box>
           </Box>
@@ -109,4 +104,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default ResetPassword;
