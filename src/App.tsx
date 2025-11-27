@@ -4,10 +4,16 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ColorModeContext } from './contexts/ColorModeContext';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
+import FunkcionarRoute from './components/FunkcionarRoute';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import UserManagement from './pages/UserManagement';
+import Members from './pages/Members';
+import AccessDashboard from './pages/AccessDashboard';
+import Zones from './pages/Zones';
+import Chips from './pages/Chips';
+import ExternalPersons from './pages/ExternalPersons';
 import { useState, useMemo } from 'react';
 
 function App() {
@@ -151,6 +157,46 @@ function App() {
                   <AdminRoute>
                     <UserManagement />
                   </AdminRoute>
+                }
+              />
+              <Route
+                path="/members"
+                element={
+                  <FunkcionarRoute>
+                    <Members />
+                  </FunkcionarRoute>
+                }
+              />
+              <Route
+                path="/access/dashboard"
+                element={
+                  <FunkcionarRoute>
+                    <AccessDashboard />
+                  </FunkcionarRoute>
+                }
+              />
+              <Route
+                path="/access/zones"
+                element={
+                  <FunkcionarRoute>
+                    <Zones />
+                  </FunkcionarRoute>
+                }
+              />
+              <Route
+                path="/access/chips"
+                element={
+                  <FunkcionarRoute>
+                    <Chips />
+                  </FunkcionarRoute>
+                }
+              />
+              <Route
+                path="/access/external-persons"
+                element={
+                  <FunkcionarRoute>
+                    <ExternalPersons />
+                  </FunkcionarRoute>
                 }
               />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

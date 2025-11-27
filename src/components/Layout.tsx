@@ -26,6 +26,11 @@ import {
   Logout,
   Brightness4,
   Brightness7,
+  Groups,
+  Nfc,
+  LocationOn,
+  PersonOff,
+  Security,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { ColorModeContext } from '../contexts/ColorModeContext';
@@ -38,7 +43,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { currentUser, userProfile, isAdmin, logout } = useAuth();
+  const { currentUser, userProfile, isAdmin, isFunkcionar, logout } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
   const colorMode = React.useContext(ColorModeContext);
@@ -84,6 +89,57 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <ListItemText primary="Dashboard" />
           </ListItemButton>
         </ListItem>
+        {(isAdmin || isFunkcionar) && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => handleNavigate('/members')}>
+              <ListItemIcon>
+                <Groups />
+              </ListItemIcon>
+              <ListItemText primary="Členové" />
+            </ListItemButton>
+          </ListItem>
+        )}
+        {(isAdmin || isFunkcionar) && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary' }}>
+              Přístupový systém
+            </Typography>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigate('/access/dashboard')}>
+                <ListItemIcon>
+                  <Security />
+                </ListItemIcon>
+                <ListItemText primary="Přehled přístupů" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigate('/access/chips')}>
+                <ListItemIcon>
+                  <Nfc />
+                </ListItemIcon>
+                <ListItemText primary="Správa čipů" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigate('/access/zones')}>
+                <ListItemIcon>
+                  <LocationOn />
+                </ListItemIcon>
+                <ListItemText primary="Přístupové zóny" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigate('/access/external-persons')}>
+                <ListItemIcon>
+                  <PersonOff />
+                </ListItemIcon>
+                <ListItemText primary="Externí osoby" />
+              </ListItemButton>
+            </ListItem>
+            <Divider sx={{ my: 1 }} />
+          </>
+        )}
         {isAdmin && (
           <ListItem disablePadding>
             <ListItemButton onClick={() => handleNavigate('/user-management')}>
@@ -149,6 +205,50 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               Dashboard
             </Button>
+
+            {(isAdmin || isFunkcionar) && (
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/members')}
+                startIcon={<Groups />}
+                sx={{ display: { xs: 'none', lg: 'flex' } }}
+              >
+                Členové
+              </Button>
+            )}
+
+            {(isAdmin || isFunkcionar) && (
+              <IconButton
+                color="inherit"
+                onClick={() => navigate('/members')}
+                sx={{ display: { xs: 'flex', lg: 'none' } }}
+                title="Členové"
+              >
+                <Groups />
+              </IconButton>
+            )}
+
+            {(isAdmin || isFunkcionar) && (
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/access/dashboard')}
+                startIcon={<Security />}
+                sx={{ display: { xs: 'none', lg: 'flex' } }}
+              >
+                Přístupy
+              </Button>
+            )}
+
+            {(isAdmin || isFunkcionar) && (
+              <IconButton
+                color="inherit"
+                onClick={() => navigate('/access/dashboard')}
+                sx={{ display: { xs: 'flex', lg: 'none' } }}
+                title="Přístupový systém"
+              >
+                <Security />
+              </IconButton>
+            )}
 
             {isAdmin && (
               <Button 
