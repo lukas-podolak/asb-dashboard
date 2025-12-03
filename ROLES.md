@@ -47,10 +47,60 @@ ASB_CLEN (vlastní profil)
 
 ### Route Guards (ochrana tras)
 
+Všechny route guardy nyní využívají univerzální `RoleRoute` komponentu:
+
 1. **AdminRoute** - vyžaduje ASB_ADMIN
 2. **FunkcionarRoute** - vyžaduje ASB_ADMIN nebo ASB_FUNKCIONAR
 3. **TrenerRoute** - vyžaduje ASB_ADMIN, ASB_FUNKCIONAR nebo ASB_TRENER
 4. **ClenRoute** - vyžaduje jakoukoli roli (přihlášený uživatel)
+
+### Univerzální komponenta RoleRoute
+
+Nová univerzální komponenta pro flexibilní ochranu tras:
+
+```typescript
+import RoleRoute from './components/RoleRoute';
+import { UserRole } from './types/user';
+import { RoleGroups } from './utils/roleHelpers';
+
+// Přímé použití s konkrétními rolemi
+<Route path="/custom" element={
+  <RoleRoute allowedRoles={[UserRole.ASB_ADMIN, UserRole.ASB_TRENER]}>
+    <CustomPage />
+  </RoleRoute>
+} />
+
+// Použití s předpřipravenými skupinami
+<Route path="/staff" element={
+  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR}>
+    <StaffPage />
+  </RoleRoute>
+} />
+
+// S vlastním přesměrováním
+<Route path="/premium" element={
+  <RoleRoute 
+    allowedRoles={[UserRole.ASB_ADMIN]}
+    redirectOnDenied="/dashboard"
+    showMessage={false}
+  >
+    <PremiumPage />
+  </RoleRoute>
+} />
+```
+
+### RoleGroups konstanty
+
+Pro snadnější použití jsou k dispozici předpřipravené skupiny rolí:
+
+```typescript
+import { RoleGroups } from '../utils/roleHelpers';
+
+RoleGroups.ADMIN_ONLY                 // [ASB_ADMIN]
+RoleGroups.ADMIN_FUNKCIONAR           // [ASB_ADMIN, ASB_FUNKCIONAR]
+RoleGroups.ADMIN_FUNKCIONAR_TRENER    // [ASB_ADMIN, ASB_FUNKCIONAR, ASB_TRENER]
+RoleGroups.ALL_ROLES                  // [ASB_ADMIN, ASB_FUNKCIONAR, ASB_TRENER, ASB_CLEN]
+```
 
 ### Použití v kódu
 

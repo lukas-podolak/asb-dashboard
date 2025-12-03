@@ -31,6 +31,7 @@ import {
   LocationOn,
   PersonOff,
   Security,
+  SportsSoccer,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { ColorModeContext } from '../contexts/ColorModeContext';
@@ -43,7 +44,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { currentUser, userProfile, isAdmin, isFunkcionar, logout } = useAuth();
+  const { currentUser, userProfile, isAdmin, isFunkcionar, isTrener, logout } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
   const colorMode = React.useContext(ColorModeContext);
@@ -135,6 +136,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <PersonOff />
                 </ListItemIcon>
                 <ListItemText primary="Externí osoby" />
+              </ListItemButton>
+            </ListItem>
+            <Divider sx={{ my: 1 }} />
+          </>
+        )}
+        {(isAdmin || isFunkcionar || isTrener) && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary' }}>
+              Tréninky
+            </Typography>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigate('/training-groups')}>
+                <ListItemIcon>
+                  <SportsSoccer />
+                </ListItemIcon>
+                <ListItemText primary="Tréninkové skupiny" />
               </ListItemButton>
             </ListItem>
             <Divider sx={{ my: 1 }} />
@@ -247,6 +265,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 title="Přístupový systém"
               >
                 <Security />
+              </IconButton>
+            )}
+
+            {(isAdmin || isFunkcionar || isTrener) && (
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/training-groups')}
+                startIcon={<SportsSoccer />}
+                sx={{ display: { xs: 'none', lg: 'flex' } }}
+              >
+                Skupiny
+              </Button>
+            )}
+
+            {(isAdmin || isFunkcionar || isTrener) && (
+              <IconButton
+                color="inherit"
+                onClick={() => navigate('/training-groups')}
+                sx={{ display: { xs: 'flex', lg: 'none' } }}
+                title="Tréninkové skupiny"
+              >
+                <SportsSoccer />
               </IconButton>
             )}
 

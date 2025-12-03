@@ -2,6 +2,23 @@ import { UserRole } from '../types/user';
 import type { UserProfile } from '../types/user';
 
 /**
+ * Předpřipravené kombinace rolí pro route guards
+ */
+export const RoleGroups = {
+  /** Pouze admin */
+  ADMIN_ONLY: [UserRole.ASB_ADMIN],
+  
+  /** Admin nebo funkcionář */
+  ADMIN_FUNKCIONAR: [UserRole.ASB_ADMIN, UserRole.ASB_FUNKCIONAR],
+  
+  /** Admin, funkcionář nebo trenér */
+  ADMIN_FUNKCIONAR_TRENER: [UserRole.ASB_ADMIN, UserRole.ASB_FUNKCIONAR, UserRole.ASB_TRENER],
+  
+  /** Všechny role (jakýkoliv přihlášený uživatel) */
+  ALL_ROLES: [UserRole.ASB_ADMIN, UserRole.ASB_FUNKCIONAR, UserRole.ASB_TRENER, UserRole.ASB_CLEN],
+} as const;
+
+/**
  * Helper funkce pro kontrolu, zda má uživatel alespoň jednu z uvedených rolí
  */
 export const hasAnyRole = (userProfile: UserProfile | null, roles: UserRole[]): boolean => {
