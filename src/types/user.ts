@@ -1,6 +1,8 @@
 export enum UserRole {
   ASB_ADMIN = 'ASB_ADMIN',
   ASB_FUNKCIONAR = 'ASB_FUNKCIONAR',
+  ASB_TRENER = 'ASB_TRENER',
+  ASB_CLEN = 'ASB_CLEN',
 }
 
 export interface UserProfile {

@@ -10,7 +10,7 @@ import {
 import { auth } from '../config/firebase';
 import type { AuthContextType } from '../types/auth';
 import { UserRole } from '../types/user';
-import { createUserProfile, getUserProfile, isAdmin as checkIsAdmin, isFunkcionar as checkIsFunkcionar } from '../utils/userService';
+import { createUserProfile, getUserProfile, isAdmin as checkIsAdmin, isFunkcionar as checkIsFunkcionar, isTrener as checkIsTrener, isClen as checkIsClen } from '../utils/userService';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +25,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isFunkcionar, setIsFunkcionar] = useState(false);
+  const [isTrener, setIsTrener] = useState(false);
+  const [isClen, setIsClen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const signup = async (email: string, password: string, displayName?: string, roles: UserRole[] = []) => {
@@ -56,12 +58,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUserRoles(profile.roles);
             setIsAdmin(checkIsAdmin(profile));
             setIsFunkcionar(checkIsFunkcionar(profile));
+            setIsTrener(checkIsTrener(profile));
+            setIsClen(checkIsClen(profile));
           } else {
             // Uživatel bez profilu - nastavit prázdné role
             setUserProfile(null);
             setUserRoles([]);
             setIsAdmin(false);
             setIsFunkcionar(false);
+            setIsTrener(false);
+            setIsClen(false);
           }
         } catch (error) {
           console.error('Chyba při načítání profilu:', error);
@@ -69,12 +75,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUserRoles([]);
           setIsAdmin(false);
           setIsFunkcionar(false);
+          setIsTrener(false);
+          setIsClen(false);
         }
       } else {
         setUserProfile(null);
         setUserRoles([]);
         setIsAdmin(false);
         setIsFunkcionar(false);
+        setIsTrener(false);
+        setIsClen(false);
       }
       
       setLoading(false);
@@ -89,6 +99,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userRoles,
     isAdmin,
     isFunkcionar,
+    isTrener,
+    isClen,
     loading,
     login,
     signup,
