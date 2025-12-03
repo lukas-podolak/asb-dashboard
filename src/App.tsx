@@ -16,6 +16,7 @@ import Chips from './pages/Chips';
 import ExternalPersons from './pages/ExternalPersons';
 import TrainingGroups from './pages/TrainingGroups';
 import TrainingPlans from './pages/TrainingPlans';
+import DetailedAttendanceStats from './pages/DetailedAttendanceStats';
 import { useState, useMemo } from 'react';
 
 function App() {
@@ -214,6 +215,14 @@ function App() {
                 element={
                   <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
                     <TrainingPlans />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/attendance/stats/:groupId"
+                element={
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
+                    <DetailedAttendanceStats />
                   </RoleRoute>
                 }
               />

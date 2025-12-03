@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -38,6 +39,7 @@ import {
   Cancel as AbsentIcon,
   Download as ExportIcon,
   CalendarToday as CalendarIcon,
+  Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -59,6 +61,7 @@ type PeriodFilter = 'month' | '3months' | 'season' | 'custom';
 const AttendanceStats: React.FC<AttendanceStatsProps> = ({ groupId, groupName }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
   
   const [period, setPeriod] = useState<PeriodFilter>('month');
   const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
@@ -281,6 +284,53 @@ const AttendanceStats: React.FC<AttendanceStatsProps> = ({ groupId, groupName })
               size="small"
             >
               Export
+            </Button>
+            
+            <Button
+              variant="contained"
+              startIcon={<AnalyticsIcon />}
+              onClick={() => {
+                const groupIdStr = typeof groupId === 'number' ? groupId.toString() : groupId;
+                const params = new URLSearchParams();
+                
+                // Přidat datumové parametry
+                if (period === 'custom' && customStartDate && customEndDate) {
+                  params.set('startDate', customStartDate.toISOString());
+                  params.set('endDate', customEndDate.toISOString());
+                  params.set('period', getPeriodLabel());
+                } else {
+                  const now = new Date();
+                  let start: Date;
+                  const end: Date = endOfMonth(now);
+                  
+                  switch (period) {
+                    case 'month':
+                      start = startOfMonth(now);
+                      break;
+                    case '3months':
+                      start = startOfMonth(subMonths(now, 2));
+                      break;
+                    case 'season': {
+                      const currentMonth = now.getMonth();
+                      start = currentMonth >= 8 
+                        ? new Date(now.getFullYear(), 8, 1)
+                        : new Date(now.getFullYear() - 1, 8, 1);
+                      break;
+                    }
+                    default:
+                      start = startOfMonth(now);
+                  }
+                  
+                  params.set('startDate', start.toISOString());
+                  params.set('endDate', end.toISOString());
+                  params.set('period', getPeriodLabel());
+                }
+                
+                navigate(`/attendance/stats/${groupIdStr}?${params.toString()}`);
+              }}
+              size="small"
+            >
+              Podrobné statistiky
             </Button>
           </Box>
         </Box>
