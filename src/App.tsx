@@ -3,10 +3,8 @@ import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { ColorModeContext } from './contexts/ColorModeContext';
 import PrivateRoute from './components/PrivateRoute';
-import AdminRoute from './components/AdminRoute';
-import FunkcionarRoute from './components/FunkcionarRoute';
-import TrenerRoute from './components/TrenerRoute';
-import ClenRoute from './components/ClenRoute';
+import RoleRoute from './components/RoleRoute';
+import { RoleGroups } from './utils/roleHelpers';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
@@ -16,6 +14,8 @@ import AccessDashboard from './pages/AccessDashboard';
 import Zones from './pages/Zones';
 import Chips from './pages/Chips';
 import ExternalPersons from './pages/ExternalPersons';
+import TrainingGroups from './pages/TrainingGroups';
+import TrainingPlans from './pages/TrainingPlans';
 import { useState, useMemo } from 'react';
 
 function App() {
@@ -156,49 +156,65 @@ function App() {
               <Route
                 path="/user-management"
                 element={
-                  <AdminRoute>
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_ONLY} showMessage={false} redirectOnDenied="/dashboard">
                     <UserManagement />
-                  </AdminRoute>
+                  </RoleRoute>
                 }
               />
               <Route
                 path="/members"
                 element={
-                  <FunkcionarRoute>
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR} showMessage={false} redirectOnDenied="/dashboard">
                     <Members />
-                  </FunkcionarRoute>
+                  </RoleRoute>
                 }
               />
               <Route
                 path="/access/dashboard"
                 element={
-                  <FunkcionarRoute>
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR} showMessage={false} redirectOnDenied="/dashboard">
                     <AccessDashboard />
-                  </FunkcionarRoute>
+                  </RoleRoute>
                 }
               />
               <Route
                 path="/access/zones"
                 element={
-                  <FunkcionarRoute>
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR} showMessage={false} redirectOnDenied="/dashboard">
                     <Zones />
-                  </FunkcionarRoute>
+                  </RoleRoute>
                 }
               />
               <Route
                 path="/access/chips"
                 element={
-                  <FunkcionarRoute>
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR} showMessage={false} redirectOnDenied="/dashboard">
                     <Chips />
-                  </FunkcionarRoute>
+                  </RoleRoute>
                 }
               />
               <Route
                 path="/access/external-persons"
                 element={
-                  <FunkcionarRoute>
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR} showMessage={false} redirectOnDenied="/dashboard">
                     <ExternalPersons />
-                  </FunkcionarRoute>
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/training-groups"
+                element={
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
+                    <TrainingGroups />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/training-plans"
+                element={
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
+                    <TrainingPlans />
+                  </RoleRoute>
                 }
               />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

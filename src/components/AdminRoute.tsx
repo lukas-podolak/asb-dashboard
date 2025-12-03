@@ -1,37 +1,25 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { Box, CircularProgress } from '@mui/material';
+import RoleRoute from './RoleRoute';
+import { RoleGroups } from '../utils/roleHelpers';
 
 interface AdminRouteProps {
   children: React.ReactNode;
 }
 
+/**
+ * Route guard pro administrátory
+ * Povoluje přístup pouze uživatelům s rolí ASB_ADMIN
+ */
 const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
-  const { currentUser, isAdmin, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (!currentUser) {
-    return <Navigate to="/login" />;
-  }
-
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" />;
-  }
-
-  return <>{children}</>;
+  return (
+    <RoleRoute 
+      allowedRoles={RoleGroups.ADMIN_ONLY}
+      showMessage={false}
+      redirectOnDenied="/dashboard"
+    >
+      {children}
+    </RoleRoute>
+  );
 };
 
 export default AdminRoute;
