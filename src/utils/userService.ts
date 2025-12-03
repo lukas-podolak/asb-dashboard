@@ -119,3 +119,11 @@ export const isAdmin = (userProfile: UserProfile | null): boolean => {
 export const isFunkcionar = (userProfile: UserProfile | null): boolean => {
   return hasRole(userProfile, UserRole.ASB_FUNKCIONAR);
 };
+
+export const isTrener = (userProfile: UserProfile | null): boolean => {
+  return hasRole(userProfile, UserRole.ASB_TRENER);
+};
+
+export const isClen = (userProfile: UserProfile | null): boolean => {
+  return hasRole(userProfile, UserRole.ASB_CLEN);
+};

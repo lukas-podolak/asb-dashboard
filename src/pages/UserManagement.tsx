@@ -26,6 +26,7 @@ import Layout from '../components/Layout';
 import { useAuth } from '../hooks/useAuth';
 import type { UserProfile, CreateUserData, UpdateUserData } from '../types/user';
 import { UserRole } from '../types/user';
+import { getRoleLabel, getRoleColor } from '../utils/roleHelpers';
 import { 
   getAllUsers, 
   updateUserProfile, 
@@ -249,7 +250,13 @@ const UserManagement: React.FC = () => {
                     <TableCell>
                       {user.roles.length > 0 ? (
                         user.roles.map((role) => (
-                          <Chip key={role} label={role} size="small" sx={{ mr: 0.5 }} />
+                          <Chip 
+                            key={role} 
+                            label={getRoleLabel(role)} 
+                            color={getRoleColor(role)}
+                            size="small" 
+                            sx={{ mr: 0.5, mb: 0.5 }} 
+                          />
                         ))
                       ) : (
                         <Chip label="Žádné role" size="small" variant="outlined" />
@@ -323,7 +330,7 @@ const UserManagement: React.FC = () => {
                   disabled={!isAdmin}
                 />
               }
-              label="ASB_ADMIN"
+              label="ASB_ADMIN - Administrátor"
             />
             <FormControlLabel
               control={
@@ -333,7 +340,27 @@ const UserManagement: React.FC = () => {
                   disabled={!isAdmin}
                 />
               }
-              label="ASB_FUNKCIONAR"
+              label="ASB_FUNKCIONAR - Funkcionář"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.roles.includes(UserRole.ASB_TRENER)}
+                  onChange={() => handleRoleToggle(UserRole.ASB_TRENER)}
+                  disabled={!isAdmin}
+                />
+              }
+              label="ASB_TRENER - Trenér"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.roles.includes(UserRole.ASB_CLEN)}
+                  onChange={() => handleRoleToggle(UserRole.ASB_CLEN)}
+                  disabled={!isAdmin}
+                />
+              }
+              label="ASB_CLEN - Člen"
             />
             {!isAdmin && (
               <Typography variant="caption" color="text.secondary" display="block">
@@ -386,7 +413,7 @@ const UserManagement: React.FC = () => {
                   disabled={!isAdmin || selectedUser?.uid === currentUser?.uid}
                 />
               }
-              label="ASB_ADMIN"
+              label="ASB_ADMIN - Administrátor"
             />
             <FormControlLabel
               control={
@@ -396,7 +423,27 @@ const UserManagement: React.FC = () => {
                   disabled={!isAdmin || selectedUser?.uid === currentUser?.uid}
                 />
               }
-              label="ASB_FUNKCIONAR"
+              label="ASB_FUNKCIONAR - Funkcionář"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.roles.includes(UserRole.ASB_TRENER)}
+                  onChange={() => handleRoleToggle(UserRole.ASB_TRENER)}
+                  disabled={!isAdmin || selectedUser?.uid === currentUser?.uid}
+                />
+              }
+              label="ASB_TRENER - Trenér"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.roles.includes(UserRole.ASB_CLEN)}
+                  onChange={() => handleRoleToggle(UserRole.ASB_CLEN)}
+                  disabled={!isAdmin || selectedUser?.uid === currentUser?.uid}
+                />
+              }
+              label="ASB_CLEN - Člen"
             />
             {selectedUser?.uid === currentUser?.uid && (
               <Typography variant="caption" color="text.secondary" display="block">

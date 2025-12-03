@@ -8,6 +8,8 @@ export interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isFunkcionar: boolean;
+  isTrener: boolean;
+  isClen: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, displayName?: string, roles?: UserRole[]) => Promise<void>;
   logout: () => Promise<void>;

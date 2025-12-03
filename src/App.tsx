@@ -5,6 +5,8 @@ import { ColorModeContext } from './contexts/ColorModeContext';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import FunkcionarRoute from './components/FunkcionarRoute';
+import TrenerRoute from './components/TrenerRoute';
+import ClenRoute from './components/ClenRoute';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
