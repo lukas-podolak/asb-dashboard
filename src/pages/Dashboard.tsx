@@ -12,6 +12,7 @@ import {
   Security,
   Person,
   SportsSoccer,
+  CalendarMonth,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import Layout from '../components/Layout';
@@ -164,6 +165,40 @@ const Dashboard: React.FC = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate('/training-groups');
+                  }}
+                >
+                  Otevřít
+                </Button>
+              </Paper>
+            </Grid>
+          )}
+
+          {(isAdmin || isFunkcionar || isTrener) && (
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: 200,
+                  cursor: 'pointer',
+                  '&:hover': { boxShadow: 6 },
+                }}
+                onClick={() => navigate('/training-plans')}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <CalendarMonth color="primary" sx={{ fontSize: 40, mr: 2 }} />
+                  <Typography variant="h6">Tréninkové plány</Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Plánujte tréninky a evidujte docházku
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  sx={{ mt: 'auto' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/training-plans');
                   }}
                 >
                   Otevřít

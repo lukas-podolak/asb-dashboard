@@ -15,6 +15,7 @@ import Zones from './pages/Zones';
 import Chips from './pages/Chips';
 import ExternalPersons from './pages/ExternalPersons';
 import TrainingGroups from './pages/TrainingGroups';
+import TrainingPlans from './pages/TrainingPlans';
 import { useState, useMemo } from 'react';
 
 function App() {
@@ -205,6 +206,14 @@ function App() {
                 element={
                   <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
                     <TrainingGroups />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/training-plans"
+                element={
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
+                    <TrainingPlans />
                   </RoleRoute>
                 }
               />

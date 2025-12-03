@@ -32,6 +32,7 @@ import {
   PersonOff,
   Security,
   SportsSoccer,
+  CalendarMonth,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { ColorModeContext } from '../contexts/ColorModeContext';
@@ -153,6 +154,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <SportsSoccer />
                 </ListItemIcon>
                 <ListItemText primary="Tréninkové skupiny" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigate('/training-plans')}>
+                <ListItemIcon>
+                  <CalendarMonth />
+                </ListItemIcon>
+                <ListItemText primary="Tréninkové plány" />
               </ListItemButton>
             </ListItem>
             <Divider sx={{ my: 1 }} />
@@ -287,6 +296,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 title="Tréninkové skupiny"
               >
                 <SportsSoccer />
+              </IconButton>
+            )}
+
+            {(isAdmin || isFunkcionar || isTrener) && (
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/training-plans')}
+                startIcon={<CalendarMonth />}
+                sx={{ display: { xs: 'none', lg: 'flex' } }}
+              >
+                Plány
+              </Button>
+            )}
+
+            {(isAdmin || isFunkcionar || isTrener) && (
+              <IconButton
+                color="inherit"
+                onClick={() => navigate('/training-plans')}
+                sx={{ display: { xs: 'flex', lg: 'none' } }}
+                title="Tréninkové plány"
+              >
+                <CalendarMonth />
               </IconButton>
             )}
 
