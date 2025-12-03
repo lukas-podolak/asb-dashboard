@@ -43,6 +43,7 @@ import {
   Schedule as ScheduleIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  Groups as AttendanceIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -64,6 +65,10 @@ import {
   duplicateTrainingPlan,
 } from '../utils/trainingPlanService';
 import { getGroupsByTrainer } from '../utils/trainingGroupService';
+import AttendanceQuickRecord from '../components/AttendanceQuickRecord';
+import AttendanceStats from '../components/AttendanceStats';
+import { getTrainingAttendanceSummary } from '../utils/attendanceService';
+import type { TrainingAttendanceSummary } from '../types/attendance';
 
 const TrainingPlans: React.FC = () => {
   const { currentUser } = useAuth();
@@ -84,6 +89,11 @@ const TrainingPlans: React.FC = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openNoteDialog, setOpenNoteDialog] = useState(false);
   const [openDayDetailDialog, setOpenDayDetailDialog] = useState(false);
+  const [openAttendanceDialog, setOpenAttendanceDialog] = useState(false);
+  const [openStatsDialog, setOpenStatsDialog] = useState(false);
+  const [statsGroupId, setStatsGroupId] = useState<string | null>(null);
+  const [attendancePlan, setAttendancePlan] = useState<TrainingPlan | null>(null);
+  const [attendanceSummaries, setAttendanceSummaries] = useState<Map<string, TrainingAttendanceSummary>>(new Map());
   const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
   const [selectedDayPlans, setSelectedDayPlans] = useState<TrainingPlan[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -120,6 +130,30 @@ const TrainingPlans: React.FC = () => {
       setMyGroups(groups);
       setUpcomingPlans(upcoming);
       setHistoricalPlans(historical);
+      
+      // Načíst statistiky docházky pro všechny plány
+      const allPlans = [...upcoming, ...historical];
+      const summaries = new Map<string, TrainingAttendanceSummary>();
+      
+      await Promise.all(
+        allPlans.map(async (plan) => {
+          try {
+            // Najít skupinu a získat počet členů
+            const group = groups.find(g => g.id === plan.groupId);
+            const totalMembers = group?.members.length || 0;
+            
+            const summary = await getTrainingAttendanceSummary(plan.id, plan.name, plan.date, totalMembers);
+            if (summary) {
+              summaries.set(plan.id, summary);
+            }
+          } catch (err) {
+            // Ignorovat chyby u jednotlivých tréninků
+            console.warn(`Nepodařilo se načíst docházku pro trénink ${plan.id}:`, err);
+          }
+        })
+      );
+      
+      setAttendanceSummaries(summaries);
       
       if (groups.length > 0) {
         setFormData(prev => {
@@ -254,6 +288,16 @@ const TrainingPlans: React.FC = () => {
     setSelectedDate(date);
     setSelectedDayPlans(plans);
     setOpenDayDetailDialog(true);
+  };
+
+  const openAttendanceForPlan = (plan: TrainingPlan) => {
+    setAttendancePlan(plan);
+    setOpenAttendanceDialog(true);
+  };
+
+  const openStatsForGroup = (groupId: string) => {
+    setStatsGroupId(groupId);
+    setOpenStatsDialog(true);
   };
 
   const resetForm = () => {
@@ -430,6 +474,19 @@ const TrainingPlans: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
+            
+            {/* Tlačítko Statistiky docházky - zobrazit pouze pokud je vybrána konkrétní skupina */}
+            {selectedGroup !== 'all' && (
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<AttendanceIcon />}
+                onClick={() => openStatsForGroup(selectedGroup)}
+                sx={{ mt: 2 }}
+              >
+                Statistiky docházky
+              </Button>
+            )}
           </Paper>
 
           {error && (
@@ -516,6 +573,16 @@ const TrainingPlans: React.FC = () => {
                       </CardContent>
                       
                       <CardActions sx={{ pt: 0, px: 2, pb: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                        {/* Docházka tlačítko */}
+                        <Button
+                          size="small"
+                          startIcon={<AttendanceIcon />}
+                          color="primary"
+                          onClick={() => openAttendanceForPlan(plan)}
+                        >
+                          Docházka
+                        </Button>
+                        
                         {plan.status === TrainingStatus.PLANNED && (
                           <>
                             <Button
@@ -699,6 +766,16 @@ const TrainingPlans: React.FC = () => {
                           </CardContent>
                           
                           <CardActions sx={{ pt: 0, px: 2, pb: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                            {/* Docházka tlačítko */}
+                            <Button
+                              size="small"
+                              startIcon={<AttendanceIcon />}
+                              color="primary"
+                              onClick={() => openAttendanceForPlan(plan)}
+                            >
+                              Docházka
+                            </Button>
+                            
                             {plan.status === TrainingStatus.PLANNED && (
                               <>
                                 <Button
@@ -1187,9 +1264,60 @@ const TrainingPlans: React.FC = () => {
                           </Typography>
                         </Paper>
                       )}
+
+                      {/* Docházka shrnutí */}
+                      {attendanceSummaries.has(plan.id) && (
+                        <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'primary.contrastText', mt: 1 }}>
+                          <Typography variant="caption" display="block" fontWeight="bold" sx={{ mb: 0.5 }}>
+                            Docházka:
+                          </Typography>
+                          <Box display="flex" gap={1} flexWrap="wrap">
+                            <Chip 
+                              label={`Přítomno: ${attendanceSummaries.get(plan.id)!.present}`} 
+                              size="small" 
+                              sx={{ bgcolor: 'success.main', color: 'white' }}
+                            />
+                            {attendanceSummaries.get(plan.id)!.late > 0 && (
+                              <Chip 
+                                label={`Pozdě: ${attendanceSummaries.get(plan.id)!.late}`} 
+                                size="small" 
+                                sx={{ bgcolor: 'warning.main', color: 'white' }}
+                              />
+                            )}
+                            {attendanceSummaries.get(plan.id)!.excused > 0 && (
+                              <Chip 
+                                label={`Omluven: ${attendanceSummaries.get(plan.id)!.excused}`} 
+                                size="small" 
+                                sx={{ bgcolor: 'info.main', color: 'white' }}
+                              />
+                            )}
+                            {attendanceSummaries.get(plan.id)!.unexcused > 0 && (
+                              <Chip 
+                                label={`Neomluven: ${attendanceSummaries.get(plan.id)!.unexcused}`} 
+                                size="small" 
+                                sx={{ bgcolor: 'error.main', color: 'white' }}
+                              />
+                            )}
+                          </Box>
+                        </Paper>
+                      )}
                     </CardContent>
 
                     <CardActions sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                      {/* Docházka tlačítko */}
+                      <Button
+                        size="small"
+                        startIcon={<AttendanceIcon />}
+                        color="primary"
+                        variant={attendanceSummaries.has(plan.id) ? 'outlined' : 'contained'}
+                        onClick={() => {
+                          setOpenDayDetailDialog(false);
+                          openAttendanceForPlan(plan);
+                        }}
+                      >
+                        Docházka {attendanceSummaries.has(plan.id) && `(${attendanceSummaries.get(plan.id)!.present})`}
+                      </Button>
+
                       {plan.status === TrainingStatus.PLANNED && (
                         <>
                           <Button
@@ -1275,6 +1403,60 @@ const TrainingPlans: React.FC = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDayDetailDialog(false)}>Zavřít</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Attendance Quick Record Dialog */}
+        {attendancePlan && (
+          <AttendanceQuickRecord
+            open={openAttendanceDialog}
+            onClose={() => {
+              setOpenAttendanceDialog(false);
+              setAttendancePlan(null);
+            }}
+            training={attendancePlan}
+            members={myGroups.find(g => g.id === attendancePlan.groupId)?.members || []}
+            currentUserId={currentUser?.uid || ''}
+            onSaved={() => {
+              loadData(); // Reload to update attendance summaries
+            }}
+          />
+        )}
+
+        {/* Attendance Stats Dialog */}
+        <Dialog
+          open={openStatsDialog}
+          onClose={() => {
+            setOpenStatsDialog(false);
+            setStatsGroupId(null);
+          }}
+          maxWidth="lg"
+          fullWidth
+          fullScreen={isMobile}
+        >
+          <DialogTitle>
+            Statistiky docházky
+            {statsGroupId && myGroups.find(g => g.id === statsGroupId) && (
+              <Typography variant="body2" color="text.secondary">
+                {myGroups.find(g => g.id === statsGroupId)?.name}
+              </Typography>
+            )}
+          </DialogTitle>
+          <DialogContent>
+            {statsGroupId && (
+              <AttendanceStats 
+                groupId={statsGroupId}
+                groupName={myGroups.find(g => g.id === statsGroupId)?.name || ''}
+              />
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => {
+              setOpenStatsDialog(false);
+              setStatsGroupId(null);
+            }}>
+              Zavřít
+            </Button>
           </DialogActions>
         </Dialog>
       </Layout>
