@@ -143,7 +143,7 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Router>
+        <Router basename={import.meta.env.BASE_URL}>
           <AuthProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
