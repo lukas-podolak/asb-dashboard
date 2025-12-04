@@ -18,9 +18,34 @@ const API_URL = 'https://is.atletika.cz/Members/MembersList/List/';
 // CORS proxy - pro produkci doporučuji vlastní backend řešení
 const CORS_PROXY = 'https://corsproxy.io/?';
 
-// Načtení členů z API Atletika.cz přes CORS proxy
+// Cache konfigurace
+const CACHE_KEY = 'members_api_cache';
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hodin v milisekundách
+
+interface CachedData {
+  members: Member[];
+  timestamp: number;
+}
+
+// Načtení členů z cache nebo API
 export const fetchMembersFromAPI = async (): Promise<Member[]> => {
   try {
+    // Zkusíme načíst z cache
+    const cachedDataString = localStorage.getItem(CACHE_KEY);
+    
+    if (cachedDataString) {
+      const cachedData: CachedData = JSON.parse(cachedDataString);
+      const now = Date.now();
+      
+      // Pokud cache není starší než CACHE_DURATION, vrátíme cachovaná data
+      if (now - cachedData.timestamp < CACHE_DURATION) {
+        console.log('📦 Načítám členy z cache');
+        return cachedData.members;
+      }
+    }
+    
+    // Cache neexistuje nebo je stará, načteme z API
+    console.log('🌐 Načítám členy z API');
     const params = new URLSearchParams({
       club: '223',
       searchText: '',
@@ -65,14 +90,36 @@ export const fetchMembersFromAPI = async (): Promise<Member[]> => {
     }
 
     const apiResponse: MembersApiResponse = await response.json();
-    console.log("🚀 ~ fetchMembersFromAPI ~ apiResponse:", apiResponse);
+    const members = apiResponse.data || [];
     
-    // Data jsou v poli "Data" (s velkým D)
-    return apiResponse.data || [];
+    // Uložíme do cache
+    const cacheData: CachedData = {
+      members,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+    
+    console.log('✅ Členi načteni z API a uloženi do cache');
+    return members;
   } catch (error) {
     console.error('Chyba při načítání členů z API:', error);
+    
+    // Pokud selže API, zkusíme vrátit starou cache jako fallback
+    const cachedDataString = localStorage.getItem(CACHE_KEY);
+    if (cachedDataString) {
+      console.warn('⚠️ Používám starou cache jako fallback');
+      const cachedData: CachedData = JSON.parse(cachedDataString);
+      return cachedData.members;
+    }
+    
     throw error;
   }
+};
+
+// Vymazání cache (např. pro refresh tlačítko)
+export const clearMembersCache = (): void => {
+  localStorage.removeItem(CACHE_KEY);
+  console.log('🗑️ Cache členů vymazána');
 };
 
 // Načtení metadat člena z Firebase

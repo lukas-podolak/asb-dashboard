@@ -19,7 +19,8 @@ import type {
 } from '../types/attendance';
 import { AttendanceStatus as AS } from '../types/attendance';
 import { getTrainingGroup } from './trainingGroupService';
-import { getHistoricalPlans, getUpcomingPlans } from './trainingPlanService';
+import { getHistoricalPlans } from './trainingPlanService';
+import { fetchMembersFromAPI } from './memberService';
 
 const COLLECTION_NAME = 'trainingAttendance';
 
@@ -155,13 +156,17 @@ export const getMemberAttendanceStats = async (
   startDate?: Date,
   endDate?: Date
 ): Promise<MemberAttendanceStats> => {
-  // Získat všechny tréninky skupiny v období
-  const historical = await getHistoricalPlans(undefined, startDate, endDate);
-  const upcoming = await getUpcomingPlans();
+  // Dnešní datum (nastavit na konec dne)
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
   
-  // Filtrovat tréninky podle groupId a datumového období
-  const allPlans = [...historical, ...upcoming].filter(p => {
+  // Získat pouze historické tréninky (ne budoucí)
+  const historical = await getHistoricalPlans(undefined, startDate, endDate);
+  
+  // Filtrovat tréninky podle groupId a datumového období (pouze do dneška)
+  const allPlans = historical.filter(p => {
     if (p.groupId !== groupId) return false;
+    if (p.date > today) return false; // Vyloučit budoucí tréninky
     if (startDate && p.date < startDate) return false;
     if (endDate && p.date > endDate) return false;
     return true;
@@ -176,9 +181,20 @@ export const getMemberAttendanceStats = async (
   const snapshot = await getDocs(q);
   const records = snapshot.docs.map(doc => mapFirestoreToAttendance(doc.id, doc.data()));
 
+  // Načíst email člena z API
+  let memberEmail: string | undefined;
+  try {
+    const members = await fetchMembersFromAPI();
+    const member = members.find(m => m.Id === memberId);
+    memberEmail = member?.Email;
+  } catch (error) {
+    console.error('Chyba při načítání emailu člena:', error);
+  }
+
   const stats: MemberAttendanceStats = {
     memberId,
     memberName: records[0]?.memberName || '',
+    memberEmail,
     totalTrainings: allPlans.length,
     present: 0,
     late: 0,
@@ -237,12 +253,16 @@ export const getGroupAttendanceStats = async (
     })
   );
 
+  // Dnešní datum (nastavit na konec dne)
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
   const historical = await getHistoricalPlans(undefined, startDate, endDate);
-  const upcoming = await getUpcomingPlans();
   
-  // Filtrovat tréninky podle groupId a datumového období
-  const allPlans = [...historical, ...upcoming].filter(p => {
+  // Filtrovat tréninky podle groupId a datumového období (pouze do dneška)
+  const allPlans = historical.filter(p => {
     if (p.groupId !== groupId) return false;
+    if (p.date > today) return false; // Vyloučit budoucí tréninky
     if (startDate && p.date < startDate) return false;
     if (endDate && p.date > endDate) return false;
     return true;
