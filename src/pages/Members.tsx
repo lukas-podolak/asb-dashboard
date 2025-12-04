@@ -22,12 +22,12 @@ import {
   InputAdornment,
   Tooltip,
 } from '@mui/material';
-import { Edit, Search as SearchIcon, Nfc } from '@mui/icons-material';
+import { Edit, Search as SearchIcon, Nfc, Refresh as RefreshIcon } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { useAuth } from '../hooks/useAuth';
 import type { MemberWithMetadata, UpdateMemberMetadata } from '../types/member';
 import type { ChipWithZones } from '../types/access';
-import { getMembersWithMetadata, saveMemberMetadata } from '../utils/memberService';
+import { getMembersWithMetadata, saveMemberMetadata, clearMembersCache } from '../utils/memberService';
 import { getChipsByHolder, getAllZones } from '../utils/accessService';
 
 const Members: React.FC = () => {
@@ -98,6 +98,14 @@ const Members: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    clearMembersCache();
+    setSuccess('Cache vymazána, načítám aktuální data...');
+    await loadMembers();
+    setSuccess('Data byla aktualizována');
+    setTimeout(() => setSuccess(''), 3000);
   };
 
   const filterMembers = () => {
@@ -215,11 +223,21 @@ const Members: React.FC = () => {
       <Paper sx={{ p: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4">Členové oddílu</Typography>
-          <TextField
-            placeholder="Hledat člena..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            size="small"
+          <Box display="flex" gap={2} alignItems="center">
+            <Tooltip title="Aktualizovat data z API">
+              <IconButton 
+                onClick={handleRefresh} 
+                color="primary"
+                disabled={loading}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+            <TextField
+              placeholder="Hledat člena..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              size="small"
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -228,7 +246,8 @@ const Members: React.FC = () => {
               ),
             }}
             sx={{ width: 300 }}
-          />
+            />
+          </Box>
         </Box>
 
         {error && (

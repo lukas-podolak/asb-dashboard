@@ -379,6 +379,11 @@ const DetailedAttendanceStats: React.FC = () => {
                         <Typography variant="body2" fontWeight="medium">
                           {member.memberName}
                         </Typography>
+                        {member.memberEmail && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            {member.memberEmail}
+                          </Typography>
+                        )}
                       </TableCell>
                       {!isMobile && (
                         <TableCell align="center">{member.totalTrainings}</TableCell>
@@ -469,14 +474,21 @@ const DetailedAttendanceStats: React.FC = () => {
                         .slice(0, 5)
                         .map((member) => (
                           <Box key={member.memberId} sx={{ mb: 2 }}>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                              <Typography variant="body2">
-                                {member.memberName}
-                              </Typography>
+                            <Box display="flex" justifyContent="space-between" alignItems="start" mb={0.5}>
+                              <Box flex={1}>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {member.memberName}
+                                </Typography>
+                                {member.memberEmail && (
+                                  <Typography variant="caption" color="text.secondary" display="block">
+                                    {member.memberEmail}
+                                  </Typography>
+                                )}
+                              </Box>
                               <Typography 
                                 variant="body2" 
                                 fontWeight="bold"
-                                sx={{ color: getAttendanceColor(member.attendanceRate) }}
+                                sx={{ color: getAttendanceColor(member.attendanceRate), ml: 1 }}
                               >
                                 {member.attendanceRate.toFixed(1)}%
                               </Typography>
@@ -510,14 +522,21 @@ const DetailedAttendanceStats: React.FC = () => {
                         .reverse()
                         .map((member) => (
                           <Box key={member.memberId} sx={{ mb: 2 }}>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
-                              <Typography variant="body2">
-                                {member.memberName}
-                              </Typography>
+                            <Box display="flex" justifyContent="space-between" alignItems="start" mb={0.5}>
+                              <Box flex={1}>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {member.memberName}
+                                </Typography>
+                                {member.memberEmail && (
+                                  <Typography variant="caption" color="text.secondary" display="block">
+                                    {member.memberEmail}
+                                  </Typography>
+                                )}
+                              </Box>
                               <Typography 
                                 variant="body2" 
                                 fontWeight="bold"
-                                sx={{ color: getAttendanceColor(member.attendanceRate) }}
+                                sx={{ color: getAttendanceColor(member.attendanceRate), ml: 1 }}
                               >
                                 {member.attendanceRate.toFixed(1)}%
                               </Typography>
@@ -636,7 +655,16 @@ const DetailedAttendanceStats: React.FC = () => {
                           
                           return (
                             <TableRow key={member.memberId}>
-                              <TableCell>{member.memberName}</TableCell>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {member.memberName}
+                                </Typography>
+                                {member.memberEmail && (
+                                  <Typography variant="caption" color="text.secondary" display="block">
+                                    {member.memberEmail}
+                                  </Typography>
+                                )}
+                              </TableCell>
                               <TableCell align="center">
                                 <Chip
                                   label={`${member.activeRate.toFixed(1)}%`}

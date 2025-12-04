@@ -409,6 +409,11 @@ const AttendanceStats: React.FC<AttendanceStatsProps> = ({ groupId, groupName })
                   <Typography variant="body2" fontWeight="medium">
                     {member.memberName}
                   </Typography>
+                  {member.memberEmail && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {member.memberEmail}
+                    </Typography>
+                  )}
                 </TableCell>
                 
                 {!isMobile && (

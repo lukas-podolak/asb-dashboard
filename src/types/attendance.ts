@@ -43,6 +43,7 @@ export interface BulkAttendanceInput {
 export interface MemberAttendanceStats {
   memberId: number;
   memberName: string;
+  memberEmail?: string; // Email člena
   totalTrainings: number; // Celkový počet tréninků skupiny
   present: number; // Plná účast
   late: number; // Pozdní příchody

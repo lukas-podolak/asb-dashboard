@@ -310,22 +310,13 @@ const TrainingPlans: React.FC = () => {
   };
 
   const formatDate = (date: Date): string => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const planDate = new Date(date);
-    planDate.setHours(0, 0, 0, 0);
-    
-    const diffTime = planDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Dnes';
-    if (diffDays === 1) return 'Zítra';
-    if (diffDays === -1) return 'Včera';
-    
-    return date.toLocaleDateString('cs-CZ', { 
+    // Vytvořit nové Date aby se vyhnuli mutaci
+    const localDate = new Date(date);
+    return localDate.toLocaleDateString('cs-CZ', { 
       weekday: 'short', 
       day: 'numeric', 
-      month: 'short' 
+      month: 'numeric',
+      year: 'numeric'
     });
   };
 
@@ -1142,7 +1133,7 @@ const TrainingPlans: React.FC = () => {
             
             <TextField
               margin="dense"
-              label="Popis tréninku *"
+              label="Popis tréninku"
               type="text"
               fullWidth
               multiline
@@ -1156,7 +1147,7 @@ const TrainingPlans: React.FC = () => {
             <Button
               onClick={handleCreatePlan}
               variant="contained"
-              disabled={!formData.name.trim() || !formData.description.trim() || !formData.groupId}
+              disabled={!formData.name.trim() || !formData.groupId}
             >
               Vytvořit
             </Button>
@@ -1224,7 +1215,7 @@ const TrainingPlans: React.FC = () => {
             
             <TextField
               margin="dense"
-              label="Popis tréninku *"
+              label="Popis tréninku"
               type="text"
               fullWidth
               multiline
@@ -1238,7 +1229,7 @@ const TrainingPlans: React.FC = () => {
             <Button
               onClick={handleUpdatePlan}
               variant="contained"
-              disabled={!formData.name.trim() || !formData.description.trim()}
+              disabled={!formData.name.trim()}
             >
               Uložit
             </Button>

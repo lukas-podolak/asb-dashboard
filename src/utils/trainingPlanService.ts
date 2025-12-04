@@ -171,12 +171,16 @@ export const createTrainingPlan = async (
     throw new Error('Skupina nenalezena');
   }
   
+  // Normalizovat datum na půlnoc
+  const normalizedDate = new Date(data.date);
+  normalizedDate.setHours(12, 0, 0, 0); // Nastavit na poledne aby se vyhnuli timezone problémům
+  
   const now = Timestamp.now();
   const newPlan = {
     name: data.name.trim(),
     description: data.description.trim(),
     type: data.type,
-    date: Timestamp.fromDate(data.date),
+    date: Timestamp.fromDate(normalizedDate),
     groupId: data.groupId,
     groupName: group.name,
     status: TrainingStatus.PLANNED,
@@ -214,7 +218,12 @@ export const updateTrainingPlan = async (
   if (data.name !== undefined) updateData.name = data.name.trim();
   if (data.description !== undefined) updateData.description = data.description.trim();
   if (data.type !== undefined) updateData.type = data.type;
-  if (data.date !== undefined) updateData.date = Timestamp.fromDate(data.date);
+  if (data.date !== undefined) {
+    // Normalizovat datum na poledne aby se vyhnuli timezone problémům
+    const normalizedDate = new Date(data.date);
+    normalizedDate.setHours(12, 0, 0, 0);
+    updateData.date = Timestamp.fromDate(normalizedDate);
+  }
   
   // Pokud se mění skupina, aktualizovat název
   if (data.groupId !== undefined && data.groupId !== existing.groupId) {
@@ -318,12 +327,16 @@ export const duplicateTrainingPlan = async (
     throw new Error('Plán nenalezen');
   }
   
+  // Normalizovat datum na poledne aby se vyhnuli timezone problémům
+  const normalizedDate = new Date(newDate);
+  normalizedDate.setHours(12, 0, 0, 0);
+  
   const now = Timestamp.now();
   const newPlan = {
     name: original.name,
     description: original.description,
     type: original.type,
-    date: Timestamp.fromDate(newDate),
+    date: Timestamp.fromDate(normalizedDate),
     groupId: original.groupId,
     groupName: original.groupName,
     executionNote: null,
