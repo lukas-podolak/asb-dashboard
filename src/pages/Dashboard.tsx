@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -15,11 +15,19 @@ import {
   CalendarMonth,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
+import { UserRole } from '../types/user';
 import Layout from '../components/Layout';
 
 const Dashboard: React.FC = () => {
-  const { currentUser, isAdmin, isFunkcionar, isTrener } = useAuth();
+  const { currentUser, isAdmin, isFunkcionar, isTrener, userProfile } = useAuth();
   const navigate = useNavigate();
+
+  // Přesměrování členů na jejich dashboard
+  useEffect(() => {
+    if (userProfile && userProfile.roles.includes(UserRole.ASB_CLEN) && !isAdmin && !isFunkcionar && !isTrener) {
+      navigate('/member-dashboard');
+    }
+  }, [userProfile, isAdmin, isFunkcionar, isTrener, navigate]);
 
   return (
     <Layout>

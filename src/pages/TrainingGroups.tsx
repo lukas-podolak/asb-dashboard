@@ -42,6 +42,7 @@ import {
   Groups as GroupsIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
+  Assessment as AttendanceIcon,
 } from '@mui/icons-material';
 import Layout from '../components/Layout';
 import { useAuth } from '../hooks/useAuth';
@@ -64,6 +65,7 @@ import { getAllUsers } from '../utils/userService';
 import type { Member } from '../types/member';
 import type { ExternalPerson } from '../types/access';
 import type { UserProfile } from '../types/user';
+import AttendanceStats from '../components/AttendanceStats';
 
 const TrainingGroups: React.FC = () => {
   const { currentUser } = useAuth();
@@ -646,6 +648,7 @@ const TrainingGroups: React.FC = () => {
           <Tabs value={memberDialogTab} onChange={(_, v) => setMemberDialogTab(v)}>
             <Tab label={`Členové (${selectedGroup?.members.length || 0})`} />
             <Tab label={`Trenéři (${selectedGroup?.trainers.length || 0})`} />
+            <Tab label="Docházka" icon={<AttendanceIcon />} iconPosition="start" />
           </Tabs>
 
           <Box sx={{ mt: 2 }}>
@@ -773,6 +776,16 @@ const TrainingGroups: React.FC = () => {
                     ))
                   )}
                 </List>
+              </Box>
+            )}
+
+            {/* Tab 2: Attendance */}
+            {memberDialogTab === 2 && selectedGroup && (
+              <Box sx={{ mt: 2 }}>
+                <AttendanceStats 
+                  groupId={selectedGroup.id.toString()} 
+                  groupName={selectedGroup.name}
+                />
               </Box>
             )}
           </Box>

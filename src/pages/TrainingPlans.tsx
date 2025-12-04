@@ -21,7 +21,6 @@ import {
   Alert,
   Chip,
   Fab,
-  Collapse,
   ToggleButtonGroup,
   ToggleButton,
   useMediaQuery,
@@ -43,6 +42,7 @@ import {
   Schedule as ScheduleIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  Groups as AttendanceIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -64,6 +64,10 @@ import {
   duplicateTrainingPlan,
 } from '../utils/trainingPlanService';
 import { getGroupsByTrainer } from '../utils/trainingGroupService';
+import AttendanceQuickRecord from '../components/AttendanceQuickRecord';
+import AttendanceStats from '../components/AttendanceStats';
+import { getTrainingAttendanceSummary } from '../utils/attendanceService';
+import type { TrainingAttendanceSummary } from '../types/attendance';
 
 const TrainingPlans: React.FC = () => {
   const { currentUser } = useAuth();
@@ -84,6 +88,11 @@ const TrainingPlans: React.FC = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openNoteDialog, setOpenNoteDialog] = useState(false);
   const [openDayDetailDialog, setOpenDayDetailDialog] = useState(false);
+  const [openAttendanceDialog, setOpenAttendanceDialog] = useState(false);
+  const [openStatsDialog, setOpenStatsDialog] = useState(false);
+  const [statsGroupId, setStatsGroupId] = useState<string | null>(null);
+  const [attendancePlan, setAttendancePlan] = useState<TrainingPlan | null>(null);
+  const [attendanceSummaries, setAttendanceSummaries] = useState<Map<string, TrainingAttendanceSummary>>(new Map());
   const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
   const [selectedDayPlans, setSelectedDayPlans] = useState<TrainingPlan[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -120,6 +129,30 @@ const TrainingPlans: React.FC = () => {
       setMyGroups(groups);
       setUpcomingPlans(upcoming);
       setHistoricalPlans(historical);
+      
+      // Načíst statistiky docházky pro všechny plány
+      const allPlans = [...upcoming, ...historical];
+      const summaries = new Map<string, TrainingAttendanceSummary>();
+      
+      await Promise.all(
+        allPlans.map(async (plan) => {
+          try {
+            // Najít skupinu a získat počet členů
+            const group = groups.find(g => g.id === plan.groupId);
+            const totalMembers = group?.members.length || 0;
+            
+            const summary = await getTrainingAttendanceSummary(plan.id, plan.name, plan.date, totalMembers);
+            if (summary) {
+              summaries.set(plan.id, summary);
+            }
+          } catch (err) {
+            // Ignorovat chyby u jednotlivých tréninků
+            console.warn(`Nepodařilo se načíst docházku pro trénink ${plan.id}:`, err);
+          }
+        })
+      );
+      
+      setAttendanceSummaries(summaries);
       
       if (groups.length > 0) {
         setFormData(prev => {
@@ -254,6 +287,16 @@ const TrainingPlans: React.FC = () => {
     setSelectedDate(date);
     setSelectedDayPlans(plans);
     setOpenDayDetailDialog(true);
+  };
+
+  const openAttendanceForPlan = (plan: TrainingPlan) => {
+    setAttendancePlan(plan);
+    setOpenAttendanceDialog(true);
+  };
+
+  const openStatsForGroup = (groupId: string) => {
+    setStatsGroupId(groupId);
+    setOpenStatsDialog(true);
   };
 
   const resetForm = () => {
@@ -430,6 +473,19 @@ const TrainingPlans: React.FC = () => {
                 ))}
               </Select>
             </FormControl>
+            
+            {/* Tlačítko Statistiky docházky - zobrazit pouze pokud je vybrána konkrétní skupina */}
+            {selectedGroup !== 'all' && (
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<AttendanceIcon />}
+                onClick={() => openStatsForGroup(selectedGroup)}
+                sx={{ mt: 2 }}
+              >
+                Statistiky docházky
+              </Button>
+            )}
           </Paper>
 
           {error && (
@@ -474,48 +530,107 @@ const TrainingPlans: React.FC = () => {
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                               {plan.groupName}
                             </Typography>
-                            <Chip 
-                              label={plan.type} 
-                              size="small" 
-                              color={plan.type === TT.COMMON ? 'primary' : 'secondary'}
-                              sx={{ mr: 1 }}
-                            />
-                            {plan.status === TrainingStatus.COMPLETED && (
+                            <Box sx={{ mb: 1 }}>
                               <Chip 
-                                icon={<CheckCircleIcon />}
-                                label="Dokončeno" 
+                                label={plan.type} 
                                 size="small" 
-                                color="success"
+                                color={plan.type === TT.COMMON ? 'primary' : 'secondary'}
                                 sx={{ mr: 1 }}
                               />
-                            )}
-                            {plan.status === TrainingStatus.CANCELLED && (
-                              <Chip 
-                                label="Vynecháno" 
-                                size="small" 
-                                color="error"
-                                sx={{ mr: 1 }}
-                              />
-                            )}
-                            {plan.executionNote && (
-                              <Chip 
-                                icon={<NotesIcon />}
-                                label="S poznámkou" 
-                                size="small" 
-                                variant="outlined"
-                              />
-                            )}
+                              {plan.status === TrainingStatus.COMPLETED && (
+                                <Chip 
+                                  icon={<CheckCircleIcon />}
+                                  label="Dokončeno" 
+                                  size="small" 
+                                  color="success"
+                                  sx={{ mr: 1 }}
+                                />
+                              )}
+                              {plan.status === TrainingStatus.CANCELLED && (
+                                <Chip 
+                                  label="Vynecháno" 
+                                  size="small" 
+                                  color="error"
+                                  sx={{ mr: 1 }}
+                                />
+                              )}
+                              {plan.executionNote && (
+                                <Chip 
+                                  icon={<NotesIcon />}
+                                  label="S poznámkou" 
+                                  size="small" 
+                                  variant="outlined"
+                                />
+                              )}
+                              {plan.memberNotes && plan.memberNotes.length > 0 && (
+                                <Chip 
+                                  label={`Poznámky: ${plan.memberNotes.length}`}
+                                  size="small" 
+                                  color="warning"
+                                  sx={{ mr: 1 }}
+                                />
+                              )}
+                            </Box>
                           </Box>
                         </Box>
+
+                        {/* POZNÁMKY SVĚŘENCŮ - VŽDY NAHOŘE! */}
+                        {plan.memberNotes && plan.memberNotes.length > 0 && (
+                          <Box sx={{ mb: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1, border: '2px solid', borderColor: 'warning.main' }}>
+                            <Typography variant="subtitle1" fontWeight="bold" color="warning.dark" gutterBottom>
+                              📝 Poznámky svěřenců ({plan.memberNotes.length}):
+                            </Typography>
+                            <Box display="flex" flexDirection="column" gap={1}>
+                              {plan.memberNotes.map((note, index) => (
+                                <Paper 
+                                  key={index}
+                                  elevation={3}
+                                  sx={{ 
+                                    p: 1.5, 
+                                    bgcolor: note.completed ? 'success.main' : 'background.paper',
+                                    color: note.completed ? 'success.contrastText' : 'text.primary',
+                                    border: '1px solid',
+                                    borderColor: note.completed ? 'success.dark' : 'divider'
+                                  }}
+                                >
+                                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={0.5}>
+                                    <Typography variant="subtitle2" fontWeight="bold">
+                                      👤 {note.memberName}
+                                    </Typography>
+                                    {note.completed && (
+                                      <Chip 
+                                        label="✓ Dokončeno" 
+                                        size="small" 
+                                        color="success"
+                                        sx={{ height: 20, fontWeight: 'bold' }}
+                                      />
+                                    )}
+                                  </Box>
+                                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                                    "{note.note}"
+                                  </Typography>
+                                </Paper>
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
                         
-                        <Collapse in={true}>
-                          <Typography variant="body2" sx={{ mt: 2, whiteSpace: 'pre-wrap' }}>
-                            {plan.description}
-                          </Typography>
-                        </Collapse>
+                        <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                          {plan.description}
+                        </Typography>
                       </CardContent>
                       
                       <CardActions sx={{ pt: 0, px: 2, pb: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                        {/* Docházka tlačítko */}
+                        <Button
+                          size="small"
+                          startIcon={<AttendanceIcon />}
+                          color="primary"
+                          onClick={() => openAttendanceForPlan(plan)}
+                        >
+                          Docházka
+                        </Button>
+                        
                         {plan.status === TrainingStatus.PLANNED && (
                           <>
                             <Button
@@ -675,16 +790,66 @@ const TrainingPlans: React.FC = () => {
                               <Typography variant="subtitle1">
                                 {plan.name}
                               </Typography>
-                              {plan.status === TrainingStatus.COMPLETED && (
-                                <Chip label="Dokončeno" size="small" color="success" />
-                              )}
-                              {plan.status === TrainingStatus.CANCELLED && (
-                                <Chip label="Vynecháno" size="small" color="error" />
-                              )}
+                              <Box>
+                                {plan.status === TrainingStatus.COMPLETED && (
+                                  <Chip label="Dokončeno" size="small" color="success" sx={{ mr: 0.5 }} />
+                                )}
+                                {plan.status === TrainingStatus.CANCELLED && (
+                                  <Chip label="Vynecháno" size="small" color="error" sx={{ mr: 0.5 }} />
+                                )}
+                                {plan.memberNotes && plan.memberNotes.length > 0 && (
+                                  <Chip 
+                                    label={`Poznámky: ${plan.memberNotes.length}`}
+                                    size="small" 
+                                    color="warning"
+                                  />
+                                )}
+                              </Box>
                             </Box>
                             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                               {plan.groupName} • {plan.type}
                             </Typography>
+
+                            {/* POZNÁMKY SVĚŘENCŮ - PRIORITA! */}
+                            {plan.memberNotes && plan.memberNotes.length > 0 && (
+                              <Paper elevation={3} sx={{ mb: 1, p: 1.5, bgcolor: 'warning.light', border: '2px solid', borderColor: 'warning.main' }}>
+                                <Typography variant="subtitle2" fontWeight="bold" color="warning.dark" gutterBottom>
+                                  📝 Poznámky svěřenců ({plan.memberNotes.length}):
+                                </Typography>
+                                <Box display="flex" flexDirection="column" gap={1}>
+                                  {plan.memberNotes.map((note, index) => (
+                                    <Paper 
+                                      key={index}
+                                      elevation={2}
+                                      sx={{ 
+                                        p: 1, 
+                                        bgcolor: note.completed ? 'success.main' : 'background.paper',
+                                        color: note.completed ? 'success.contrastText' : 'text.primary',
+                                        border: '1px solid',
+                                        borderColor: note.completed ? 'success.dark' : 'divider'
+                                      }}
+                                    >
+                                      <Box display="flex" justifyContent="space-between" alignItems="start" mb={0.5}>
+                                        <Typography variant="body2" fontWeight="bold">
+                                          👤 {note.memberName}
+                                        </Typography>
+                                        {note.completed && (
+                                          <Chip 
+                                            label="✓ Dokončeno" 
+                                            size="small" 
+                                            color="success"
+                                            sx={{ height: 18, fontSize: '0.7rem', fontWeight: 'bold' }}
+                                          />
+                                        )}
+                                      </Box>
+                                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                                        "{note.note}"
+                                      </Typography>
+                                    </Paper>
+                                  ))}
+                                </Box>
+                              </Paper>
+                            )}
                             
                             {plan.executionNote && (
                               <Paper sx={{ mt: 1, p: 1, bgcolor: 'action.hover' }}>
@@ -699,6 +864,16 @@ const TrainingPlans: React.FC = () => {
                           </CardContent>
                           
                           <CardActions sx={{ pt: 0, px: 2, pb: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                            {/* Docházka tlačítko */}
+                            <Button
+                              size="small"
+                              startIcon={<AttendanceIcon />}
+                              color="primary"
+                              onClick={() => openAttendanceForPlan(plan)}
+                            >
+                              Docházka
+                            </Button>
+                            
                             {plan.status === TrainingStatus.PLANNED && (
                               <>
                                 <Button
@@ -1161,17 +1336,67 @@ const TrainingPlans: React.FC = () => {
                         <Typography variant="h6">
                           {plan.name}
                         </Typography>
-                        {plan.status === TrainingStatus.COMPLETED && (
-                          <Chip label="Dokončeno" size="small" color="success" />
-                        )}
-                        {plan.status === TrainingStatus.CANCELLED && (
-                          <Chip label="Vynecháno" size="small" color="error" />
-                        )}
+                        <Box>
+                          {plan.status === TrainingStatus.COMPLETED && (
+                            <Chip label="Dokončeno" size="small" color="success" sx={{ mr: 0.5 }} />
+                          )}
+                          {plan.status === TrainingStatus.CANCELLED && (
+                            <Chip label="Vynecháno" size="small" color="error" sx={{ mr: 0.5 }} />
+                          )}
+                          {plan.memberNotes && plan.memberNotes.length > 0 && (
+                            <Chip 
+                              label={`Poznámky: ${plan.memberNotes.length}`}
+                              size="small" 
+                              color="warning"
+                            />
+                          )}
+                        </Box>
                       </Box>
 
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         {plan.groupName} • {plan.type}
                       </Typography>
+
+                      {/* POZNÁMKY SVĚŘENCŮ - HLAVNÍ PRIORITA! */}
+                      {plan.memberNotes && plan.memberNotes.length > 0 && (
+                        <Paper elevation={4} sx={{ p: 2, mb: 2, bgcolor: 'warning.light', border: '3px solid', borderColor: 'warning.main' }}>
+                          <Typography variant="h6" fontWeight="bold" color="warning.dark" sx={{ mb: 1 }}>
+                            📝 Poznámky svěřenců ({plan.memberNotes.length}):
+                          </Typography>
+                          <Box display="flex" flexDirection="column" gap={1}>
+                            {plan.memberNotes.map((note, index) => (
+                              <Paper 
+                                key={index}
+                                elevation={3}
+                                sx={{ 
+                                  p: 1.5, 
+                                  bgcolor: note.completed ? 'success.main' : 'background.paper',
+                                  color: note.completed ? 'success.contrastText' : 'text.primary',
+                                  border: '2px solid',
+                                  borderColor: note.completed ? 'success.dark' : 'divider'
+                                }}
+                              >
+                                <Box display="flex" justifyContent="space-between" alignItems="start" mb={0.5}>
+                                  <Typography variant="subtitle1" fontWeight="bold">
+                                    👤 {note.memberName}
+                                  </Typography>
+                                  {note.completed && (
+                                    <Chip 
+                                      label="✓ Dokončeno" 
+                                      size="small" 
+                                      color="success"
+                                      sx={{ height: 22, fontWeight: 'bold' }}
+                                    />
+                                  )}
+                                </Box>
+                                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                                  "{note.note}"
+                                </Typography>
+                              </Paper>
+                            ))}
+                          </Box>
+                        </Paper>
+                      )}
 
                       <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
                         {plan.description}
@@ -1187,9 +1412,60 @@ const TrainingPlans: React.FC = () => {
                           </Typography>
                         </Paper>
                       )}
+
+                      {/* Docházka shrnutí */}
+                      {attendanceSummaries.has(plan.id) && (
+                        <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'primary.contrastText', mt: 1 }}>
+                          <Typography variant="caption" display="block" fontWeight="bold" sx={{ mb: 0.5 }}>
+                            Docházka:
+                          </Typography>
+                          <Box display="flex" gap={1} flexWrap="wrap">
+                            <Chip 
+                              label={`Přítomno: ${attendanceSummaries.get(plan.id)!.present}`} 
+                              size="small" 
+                              sx={{ bgcolor: 'success.main', color: 'white' }}
+                            />
+                            {attendanceSummaries.get(plan.id)!.late > 0 && (
+                              <Chip 
+                                label={`Pozdě: ${attendanceSummaries.get(plan.id)!.late}`} 
+                                size="small" 
+                                sx={{ bgcolor: 'warning.main', color: 'white' }}
+                              />
+                            )}
+                            {attendanceSummaries.get(plan.id)!.excused > 0 && (
+                              <Chip 
+                                label={`Omluven: ${attendanceSummaries.get(plan.id)!.excused}`} 
+                                size="small" 
+                                sx={{ bgcolor: 'info.main', color: 'white' }}
+                              />
+                            )}
+                            {attendanceSummaries.get(plan.id)!.unexcused > 0 && (
+                              <Chip 
+                                label={`Neomluven: ${attendanceSummaries.get(plan.id)!.unexcused}`} 
+                                size="small" 
+                                sx={{ bgcolor: 'error.main', color: 'white' }}
+                              />
+                            )}
+                          </Box>
+                        </Paper>
+                      )}
                     </CardContent>
 
                     <CardActions sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                      {/* Docházka tlačítko */}
+                      <Button
+                        size="small"
+                        startIcon={<AttendanceIcon />}
+                        color="primary"
+                        variant={attendanceSummaries.has(plan.id) ? 'outlined' : 'contained'}
+                        onClick={() => {
+                          setOpenDayDetailDialog(false);
+                          openAttendanceForPlan(plan);
+                        }}
+                      >
+                        Docházka {attendanceSummaries.has(plan.id) && `(${attendanceSummaries.get(plan.id)!.present})`}
+                      </Button>
+
                       {plan.status === TrainingStatus.PLANNED && (
                         <>
                           <Button
@@ -1275,6 +1551,60 @@ const TrainingPlans: React.FC = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDayDetailDialog(false)}>Zavřít</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Attendance Quick Record Dialog */}
+        {attendancePlan && (
+          <AttendanceQuickRecord
+            open={openAttendanceDialog}
+            onClose={() => {
+              setOpenAttendanceDialog(false);
+              setAttendancePlan(null);
+            }}
+            training={attendancePlan}
+            members={myGroups.find(g => g.id === attendancePlan.groupId)?.members || []}
+            currentUserId={currentUser?.uid || ''}
+            onSaved={() => {
+              loadData(); // Reload to update attendance summaries
+            }}
+          />
+        )}
+
+        {/* Attendance Stats Dialog */}
+        <Dialog
+          open={openStatsDialog}
+          onClose={() => {
+            setOpenStatsDialog(false);
+            setStatsGroupId(null);
+          }}
+          maxWidth="lg"
+          fullWidth
+          fullScreen={isMobile}
+        >
+          <DialogTitle>
+            Statistiky docházky
+            {statsGroupId && myGroups.find(g => g.id === statsGroupId) && (
+              <Typography variant="body2" color="text.secondary">
+                {myGroups.find(g => g.id === statsGroupId)?.name}
+              </Typography>
+            )}
+          </DialogTitle>
+          <DialogContent>
+            {statsGroupId && (
+              <AttendanceStats 
+                groupId={statsGroupId}
+                groupName={myGroups.find(g => g.id === statsGroupId)?.name || ''}
+              />
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => {
+              setOpenStatsDialog(false);
+              setStatsGroupId(null);
+            }}>
+              Zavřít
+            </Button>
           </DialogActions>
         </Dialog>
       </Layout>

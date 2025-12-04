@@ -5,6 +5,7 @@ import { ColorModeContext } from './contexts/ColorModeContext';
 import PrivateRoute from './components/PrivateRoute';
 import RoleRoute from './components/RoleRoute';
 import { RoleGroups } from './utils/roleHelpers';
+import { UserRole } from './types/user';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
@@ -16,6 +17,8 @@ import Chips from './pages/Chips';
 import ExternalPersons from './pages/ExternalPersons';
 import TrainingGroups from './pages/TrainingGroups';
 import TrainingPlans from './pages/TrainingPlans';
+import DetailedAttendanceStats from './pages/DetailedAttendanceStats';
+import MemberDashboard from './pages/MemberDashboard';
 import { useState, useMemo } from 'react';
 
 function App() {
@@ -140,7 +143,7 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Router>
+        <Router basename={import.meta.env.BASE_URL}>
           <AuthProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
@@ -214,6 +217,22 @@ function App() {
                 element={
                   <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
                     <TrainingPlans />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/attendance/stats/:groupId"
+                element={
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
+                    <DetailedAttendanceStats />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/member-dashboard"
+                element={
+                  <RoleRoute allowedRoles={[UserRole.ASB_CLEN]} showMessage={false} redirectOnDenied="/dashboard">
+                    <MemberDashboard />
                   </RoleRoute>
                 }
               />
