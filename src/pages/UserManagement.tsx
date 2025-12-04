@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { Edit, Delete, PersonAdd } from '@mui/icons-material';
 import Layout from '../components/Layout';
+import MemberAccountManager from '../components/MemberAccountManager';
 import { useAuth } from '../hooks/useAuth';
 import type { UserProfile, CreateUserData, UpdateUserData } from '../types/user';
 import { UserRole } from '../types/user';
@@ -191,9 +192,15 @@ const UserManagement: React.FC = () => {
 
   return (
     <Layout>
+      {/* Členské účty */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <MemberAccountManager />
+      </Paper>
+
+      {/* Administrátorské účty */}
       <Paper sx={{ p: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4">Správa uživatelů</Typography>
+          <Typography variant="h4">Správa administrátorských účtů</Typography>
           <Button
             variant="contained"
             startIcon={<PersonAdd />}

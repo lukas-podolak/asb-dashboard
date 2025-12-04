@@ -24,16 +24,31 @@ export interface TrainingPlan {
   // Status tréninku
   status: TrainingStatus; // Stav tréninku (naplánován/dokončen/vynechán)
   
-  // Poznámka o provedení tréninku
+  // Poznámka o provedení tréninku (trenér)
   executionNote?: string; // Poznámka po tréninku (co se dělo, jak to probíhalo)
   executedAt?: Date; // Kdy byla poznámka přidána
   executedBy?: string; // Kdo přidal poznámku (uid)
+  
+  // Poznámky svěřenců (pouze pro individuální tréninky)
+  memberNotes?: MemberTrainingNote[]; // Poznámky členů
   
   // Metadata
   createdAt: Date;
   createdBy: string; // uid trenéra
   updatedAt: Date;
   updatedBy: string; // uid trenéra
+}
+
+// Poznámka člena k tréninku
+export interface MemberTrainingNote {
+  memberId: number; // ID člena z Members
+  memberName: string; // Jméno člena
+  note: string; // Text poznámky
+  completed: boolean; // Zda člen označil trénink jako dokončený
+  createdAt: Date;
+  createdBy: string; // uid uživatele (člena)
+  updatedAt?: Date; // Kdy byla poznámka upravena
+  updatedBy?: string; // Kdo poznámku upravil
 }
 
 // DTO pro vytvoření/úpravu plánu

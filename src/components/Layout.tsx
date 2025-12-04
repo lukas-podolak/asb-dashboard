@@ -191,9 +191,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </List>
       <Box sx={{ px: 2, py: 2 }}>
         <Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
-          {userProfile?.displayName || currentUser?.email}
+          {userProfile?.memberName || userProfile?.displayName || currentUser?.email}
         </Typography>
-        {userProfile?.displayName && (
+        {(userProfile?.memberName || userProfile?.displayName) && (
           <Typography variant="caption" color="text.secondary">
             {currentUser?.email}
           </Typography>
@@ -344,7 +344,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
 
             <Typography variant="body2" sx={{ mx: 2, display: { xs: 'none', md: 'block' } }}>
-              {userProfile?.displayName || currentUser?.email}
+              {userProfile?.memberName || userProfile?.displayName || currentUser?.email}
             </Typography>
             
             <IconButton onClick={colorMode.toggleColorMode} color="inherit">

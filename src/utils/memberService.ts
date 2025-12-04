@@ -4,7 +4,10 @@ import {
   setDoc, 
   collection,
   getDocs,
-  Timestamp
+  Timestamp,
+  query,
+  where,
+  limit,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import type { Member, MemberMetadata, MemberWithMetadata, UpdateMemberMetadata, MembersApiResponse } from '../types/member';
@@ -168,5 +171,79 @@ export const getMembersWithMetadata = async (): Promise<MemberWithMetadata[]> =>
   } catch (error) {
     console.error('Chyba při načítání členů s metadaty:', error);
     throw error;
+  }
+};
+
+// Načtení členského záznamu podle Firebase Auth UID
+export const getMemberByUserId = async (uid: string): Promise<number | null> => {
+  try {
+    const q = query(
+      collection(db, MEMBERS_METADATA_COLLECTION),
+      where('uid', '==', uid),
+      limit(1)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    return parseInt(querySnapshot.docs[0].id);
+  } catch (error) {
+    console.error('Chyba při načítání člena podle UID:', error);
+    return null;
+  }
+};
+
+// Načtení celého jména člena podle member ID
+export const getMemberFullName = async (memberId: number): Promise<string | null> => {
+  try {
+    const members = await fetchMembersFromAPI();
+    const member = members.find(m => m.Id === memberId);
+    
+    if (!member) {
+      return null;
+    }
+    
+    return member.CeleJmeno;
+  } catch (error) {
+    console.error('Chyba při načítání jména člena:', error);
+    return null;
+  }
+};
+
+// Propojení Firebase Auth uživatele s členem
+export const linkUserToMember = async (
+  uid: string,
+  memberId: number,
+  userId: string
+): Promise<void> => {
+  try {
+    const docRef = doc(db, MEMBERS_METADATA_COLLECTION, memberId.toString());
+    await setDoc(
+      docRef,
+      {
+        memberId,
+        uid,
+        updatedAt: Timestamp.fromDate(new Date()),
+        updatedBy: userId,
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error('Chyba při propojování uživatele s členem:', error);
+    throw error;
+  }
+};
+
+// Kontrola, zda je člen již propojený s uživatelským účtem
+export const isMemberLinked = async (memberId: number): Promise<boolean> => {
+  try {
+    const docRef = doc(db, MEMBERS_METADATA_COLLECTION, memberId.toString());
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() && !!docSnap.data()?.uid;
+  } catch (error) {
+    console.error('Chyba při kontrole propojení člena:', error);
+    return false;
   }
 };

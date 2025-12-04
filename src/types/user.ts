@@ -9,6 +9,8 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName?: string;
+  memberId?: number; // Propojení na člena z Members
+  memberName?: string; // Cache jména člena pro rychlé zobrazení
   roles: UserRole[];
   createdAt: Date;
   updatedAt: Date;

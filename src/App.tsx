@@ -5,6 +5,7 @@ import { ColorModeContext } from './contexts/ColorModeContext';
 import PrivateRoute from './components/PrivateRoute';
 import RoleRoute from './components/RoleRoute';
 import { RoleGroups } from './utils/roleHelpers';
+import { UserRole } from './types/user';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
@@ -17,6 +18,7 @@ import ExternalPersons from './pages/ExternalPersons';
 import TrainingGroups from './pages/TrainingGroups';
 import TrainingPlans from './pages/TrainingPlans';
 import DetailedAttendanceStats from './pages/DetailedAttendanceStats';
+import MemberDashboard from './pages/MemberDashboard';
 import { useState, useMemo } from 'react';
 
 function App() {
@@ -223,6 +225,14 @@ function App() {
                 element={
                   <RoleRoute allowedRoles={RoleGroups.ADMIN_FUNKCIONAR_TRENER} showMessage={true}>
                     <DetailedAttendanceStats />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/member-dashboard"
+                element={
+                  <RoleRoute allowedRoles={[UserRole.ASB_CLEN]} showMessage={false} redirectOnDenied="/dashboard">
+                    <MemberDashboard />
                   </RoleRoute>
                 }
               />

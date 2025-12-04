@@ -21,7 +21,6 @@ import {
   Alert,
   Chip,
   Fab,
-  Collapse,
   ToggleButtonGroup,
   ToggleButton,
   useMediaQuery,
@@ -531,45 +530,94 @@ const TrainingPlans: React.FC = () => {
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                               {plan.groupName}
                             </Typography>
-                            <Chip 
-                              label={plan.type} 
-                              size="small" 
-                              color={plan.type === TT.COMMON ? 'primary' : 'secondary'}
-                              sx={{ mr: 1 }}
-                            />
-                            {plan.status === TrainingStatus.COMPLETED && (
+                            <Box sx={{ mb: 1 }}>
                               <Chip 
-                                icon={<CheckCircleIcon />}
-                                label="Dokončeno" 
+                                label={plan.type} 
                                 size="small" 
-                                color="success"
+                                color={plan.type === TT.COMMON ? 'primary' : 'secondary'}
                                 sx={{ mr: 1 }}
                               />
-                            )}
-                            {plan.status === TrainingStatus.CANCELLED && (
-                              <Chip 
-                                label="Vynecháno" 
-                                size="small" 
-                                color="error"
-                                sx={{ mr: 1 }}
-                              />
-                            )}
-                            {plan.executionNote && (
-                              <Chip 
-                                icon={<NotesIcon />}
-                                label="S poznámkou" 
-                                size="small" 
-                                variant="outlined"
-                              />
-                            )}
+                              {plan.status === TrainingStatus.COMPLETED && (
+                                <Chip 
+                                  icon={<CheckCircleIcon />}
+                                  label="Dokončeno" 
+                                  size="small" 
+                                  color="success"
+                                  sx={{ mr: 1 }}
+                                />
+                              )}
+                              {plan.status === TrainingStatus.CANCELLED && (
+                                <Chip 
+                                  label="Vynecháno" 
+                                  size="small" 
+                                  color="error"
+                                  sx={{ mr: 1 }}
+                                />
+                              )}
+                              {plan.executionNote && (
+                                <Chip 
+                                  icon={<NotesIcon />}
+                                  label="S poznámkou" 
+                                  size="small" 
+                                  variant="outlined"
+                                />
+                              )}
+                              {plan.memberNotes && plan.memberNotes.length > 0 && (
+                                <Chip 
+                                  label={`Poznámky: ${plan.memberNotes.length}`}
+                                  size="small" 
+                                  color="warning"
+                                  sx={{ mr: 1 }}
+                                />
+                              )}
+                            </Box>
                           </Box>
                         </Box>
+
+                        {/* POZNÁMKY SVĚŘENCŮ - VŽDY NAHOŘE! */}
+                        {plan.memberNotes && plan.memberNotes.length > 0 && (
+                          <Box sx={{ mb: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1, border: '2px solid', borderColor: 'warning.main' }}>
+                            <Typography variant="subtitle1" fontWeight="bold" color="warning.dark" gutterBottom>
+                              📝 Poznámky svěřenců ({plan.memberNotes.length}):
+                            </Typography>
+                            <Box display="flex" flexDirection="column" gap={1}>
+                              {plan.memberNotes.map((note, index) => (
+                                <Paper 
+                                  key={index}
+                                  elevation={3}
+                                  sx={{ 
+                                    p: 1.5, 
+                                    bgcolor: note.completed ? 'success.main' : 'background.paper',
+                                    color: note.completed ? 'success.contrastText' : 'text.primary',
+                                    border: '1px solid',
+                                    borderColor: note.completed ? 'success.dark' : 'divider'
+                                  }}
+                                >
+                                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={0.5}>
+                                    <Typography variant="subtitle2" fontWeight="bold">
+                                      👤 {note.memberName}
+                                    </Typography>
+                                    {note.completed && (
+                                      <Chip 
+                                        label="✓ Dokončeno" 
+                                        size="small" 
+                                        color="success"
+                                        sx={{ height: 20, fontWeight: 'bold' }}
+                                      />
+                                    )}
+                                  </Box>
+                                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                                    "{note.note}"
+                                  </Typography>
+                                </Paper>
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
                         
-                        <Collapse in={true}>
-                          <Typography variant="body2" sx={{ mt: 2, whiteSpace: 'pre-wrap' }}>
-                            {plan.description}
-                          </Typography>
-                        </Collapse>
+                        <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
+                          {plan.description}
+                        </Typography>
                       </CardContent>
                       
                       <CardActions sx={{ pt: 0, px: 2, pb: 1, flexWrap: 'wrap', gap: 0.5 }}>
@@ -742,16 +790,66 @@ const TrainingPlans: React.FC = () => {
                               <Typography variant="subtitle1">
                                 {plan.name}
                               </Typography>
-                              {plan.status === TrainingStatus.COMPLETED && (
-                                <Chip label="Dokončeno" size="small" color="success" />
-                              )}
-                              {plan.status === TrainingStatus.CANCELLED && (
-                                <Chip label="Vynecháno" size="small" color="error" />
-                              )}
+                              <Box>
+                                {plan.status === TrainingStatus.COMPLETED && (
+                                  <Chip label="Dokončeno" size="small" color="success" sx={{ mr: 0.5 }} />
+                                )}
+                                {plan.status === TrainingStatus.CANCELLED && (
+                                  <Chip label="Vynecháno" size="small" color="error" sx={{ mr: 0.5 }} />
+                                )}
+                                {plan.memberNotes && plan.memberNotes.length > 0 && (
+                                  <Chip 
+                                    label={`Poznámky: ${plan.memberNotes.length}`}
+                                    size="small" 
+                                    color="warning"
+                                  />
+                                )}
+                              </Box>
                             </Box>
                             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                               {plan.groupName} • {plan.type}
                             </Typography>
+
+                            {/* POZNÁMKY SVĚŘENCŮ - PRIORITA! */}
+                            {plan.memberNotes && plan.memberNotes.length > 0 && (
+                              <Paper elevation={3} sx={{ mb: 1, p: 1.5, bgcolor: 'warning.light', border: '2px solid', borderColor: 'warning.main' }}>
+                                <Typography variant="subtitle2" fontWeight="bold" color="warning.dark" gutterBottom>
+                                  📝 Poznámky svěřenců ({plan.memberNotes.length}):
+                                </Typography>
+                                <Box display="flex" flexDirection="column" gap={1}>
+                                  {plan.memberNotes.map((note, index) => (
+                                    <Paper 
+                                      key={index}
+                                      elevation={2}
+                                      sx={{ 
+                                        p: 1, 
+                                        bgcolor: note.completed ? 'success.main' : 'background.paper',
+                                        color: note.completed ? 'success.contrastText' : 'text.primary',
+                                        border: '1px solid',
+                                        borderColor: note.completed ? 'success.dark' : 'divider'
+                                      }}
+                                    >
+                                      <Box display="flex" justifyContent="space-between" alignItems="start" mb={0.5}>
+                                        <Typography variant="body2" fontWeight="bold">
+                                          👤 {note.memberName}
+                                        </Typography>
+                                        {note.completed && (
+                                          <Chip 
+                                            label="✓ Dokončeno" 
+                                            size="small" 
+                                            color="success"
+                                            sx={{ height: 18, fontSize: '0.7rem', fontWeight: 'bold' }}
+                                          />
+                                        )}
+                                      </Box>
+                                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                                        "{note.note}"
+                                      </Typography>
+                                    </Paper>
+                                  ))}
+                                </Box>
+                              </Paper>
+                            )}
                             
                             {plan.executionNote && (
                               <Paper sx={{ mt: 1, p: 1, bgcolor: 'action.hover' }}>
@@ -1238,17 +1336,67 @@ const TrainingPlans: React.FC = () => {
                         <Typography variant="h6">
                           {plan.name}
                         </Typography>
-                        {plan.status === TrainingStatus.COMPLETED && (
-                          <Chip label="Dokončeno" size="small" color="success" />
-                        )}
-                        {plan.status === TrainingStatus.CANCELLED && (
-                          <Chip label="Vynecháno" size="small" color="error" />
-                        )}
+                        <Box>
+                          {plan.status === TrainingStatus.COMPLETED && (
+                            <Chip label="Dokončeno" size="small" color="success" sx={{ mr: 0.5 }} />
+                          )}
+                          {plan.status === TrainingStatus.CANCELLED && (
+                            <Chip label="Vynecháno" size="small" color="error" sx={{ mr: 0.5 }} />
+                          )}
+                          {plan.memberNotes && plan.memberNotes.length > 0 && (
+                            <Chip 
+                              label={`Poznámky: ${plan.memberNotes.length}`}
+                              size="small" 
+                              color="warning"
+                            />
+                          )}
+                        </Box>
                       </Box>
 
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         {plan.groupName} • {plan.type}
                       </Typography>
+
+                      {/* POZNÁMKY SVĚŘENCŮ - HLAVNÍ PRIORITA! */}
+                      {plan.memberNotes && plan.memberNotes.length > 0 && (
+                        <Paper elevation={4} sx={{ p: 2, mb: 2, bgcolor: 'warning.light', border: '3px solid', borderColor: 'warning.main' }}>
+                          <Typography variant="h6" fontWeight="bold" color="warning.dark" sx={{ mb: 1 }}>
+                            📝 Poznámky svěřenců ({plan.memberNotes.length}):
+                          </Typography>
+                          <Box display="flex" flexDirection="column" gap={1}>
+                            {plan.memberNotes.map((note, index) => (
+                              <Paper 
+                                key={index}
+                                elevation={3}
+                                sx={{ 
+                                  p: 1.5, 
+                                  bgcolor: note.completed ? 'success.main' : 'background.paper',
+                                  color: note.completed ? 'success.contrastText' : 'text.primary',
+                                  border: '2px solid',
+                                  borderColor: note.completed ? 'success.dark' : 'divider'
+                                }}
+                              >
+                                <Box display="flex" justifyContent="space-between" alignItems="start" mb={0.5}>
+                                  <Typography variant="subtitle1" fontWeight="bold">
+                                    👤 {note.memberName}
+                                  </Typography>
+                                  {note.completed && (
+                                    <Chip 
+                                      label="✓ Dokončeno" 
+                                      size="small" 
+                                      color="success"
+                                      sx={{ height: 22, fontWeight: 'bold' }}
+                                    />
+                                  )}
+                                </Box>
+                                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+                                  "{note.note}"
+                                </Typography>
+                              </Paper>
+                            ))}
+                          </Box>
+                        </Paper>
+                      )}
 
                       <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
                         {plan.description}
