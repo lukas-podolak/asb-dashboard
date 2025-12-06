@@ -29,7 +29,7 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
-import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { UserRole } from '../types/user';
@@ -122,6 +122,21 @@ const MemberAccountManager: React.FC = () => {
     setError('');
     setSuccess('');
 
+    // Uložit email aktuálně přihlášeného admina
+    const adminEmail = currentUser.email;
+    
+    // Nechat uživatele zadat jeho heslo pro znovu přihlášení
+    const adminPassword = window.prompt(
+      'Pro vytvoření nového účtu zadejte vaše heslo (budete znovu přihlášen):',
+      ''
+    );
+    
+    if (!adminPassword) {
+      setError('Musíte zadat vaše heslo pro pokračování');
+      setCreating(false);
+      return;
+    }
+
     try {
       // Vytvoření uživatele přes Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -142,6 +157,18 @@ const MemberAccountManager: React.FC = () => {
       // Propojení s členem v Firestore
       await linkUserToMember(uid, selectedMember.memberId, currentUser.uid);
 
+      // DŮLEŽITÉ: Znovu přihlásit původního admina
+      if (adminEmail) {
+        try {
+          await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+        } catch (reloginError) {
+          console.error('Chyba při opětovném přihlášení:', reloginError);
+          setError('Účet byl vytvořen, ale nepodařilo se vás znovu přihlásit. Přihlaste se prosím ručně.');
+          setCreating(false);
+          return;
+        }
+      }
+
       setSuccess(`Účet byl úspěšně vytvořen!\n\nEmail: ${email}\nDočasné heslo: ${password}\n\nPošlete tyto údaje členovi. Při prvním přihlášení by měl heslo změnit.`);
       
       // Aktualizace seznamu
@@ -159,6 +186,8 @@ const MemberAccountManager: React.FC = () => {
         setError('Neplatný formát emailu');
       } else if (err.code === 'auth/weak-password') {
         setError('Heslo je příliš slabé');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Nesprávné heslo admina - účet byl vytvořen, ale nemůžete se přihlásit zpět');
       } else {
         setError(`Chyba: ${err.message}`);
       }
