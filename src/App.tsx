@@ -19,6 +19,7 @@ import TrainingGroups from './pages/TrainingGroups';
 import TrainingPlans from './pages/TrainingPlans';
 import DetailedAttendanceStats from './pages/DetailedAttendanceStats';
 import MemberDashboard from './pages/MemberDashboard';
+import PermissionsManagement from './pages/PermissionsManagement';
 import { useState, useMemo } from 'react';
 
 function App() {
@@ -161,6 +162,14 @@ function App() {
                 element={
                   <RoleRoute allowedRoles={RoleGroups.ADMIN_ONLY} showMessage={false} redirectOnDenied="/dashboard">
                     <UserManagement />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/permissions"
+                element={
+                  <RoleRoute allowedRoles={RoleGroups.ADMIN_ONLY} showMessage={false} redirectOnDenied="/dashboard">
+                    <PermissionsManagement />
                   </RoleRoute>
                 }
               />

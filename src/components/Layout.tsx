@@ -33,6 +33,7 @@ import {
   Security,
   SportsSoccer,
   CalendarMonth,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { ColorModeContext } from '../contexts/ColorModeContext';
@@ -168,14 +169,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </>
         )}
         {isAdmin && (
-          <ListItem disablePadding>
-            <ListItemButton onClick={() => handleNavigate('/user-management')}>
-              <ListItemIcon>
-                <People />
-              </ListItemIcon>
-              <ListItemText primary="Správa uživatelů" />
-            </ListItemButton>
-          </ListItem>
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigate('/user-management')}>
+                <ListItemIcon>
+                  <People />
+                </ListItemIcon>
+                <ListItemText primary="Správa uživatelů" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigate('/permissions')}>
+                <ListItemIcon>
+                  <AdminPanelSettings />
+                </ListItemIcon>
+                <ListItemText primary="Správa oprávnění" />
+              </ListItemButton>
+            </ListItem>
+          </>
         )}
       </List>
       <Divider />

@@ -13,6 +13,7 @@ import {
   Person,
   SportsSoccer,
   CalendarMonth,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../types/user';
@@ -139,6 +140,40 @@ const Dashboard: React.FC = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate('/user-management');
+                  }}
+                >
+                  Otevřít
+                </Button>
+              </Paper>
+            </Grid>
+          )}
+
+          {isAdmin && (
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: 200,
+                  cursor: 'pointer',
+                  '&:hover': { boxShadow: 6 },
+                }}
+                onClick={() => navigate('/permissions')}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <AdminPanelSettings color="error" sx={{ fontSize: 40, mr: 2 }} />
+                  <Typography variant="h6">Správa oprávnění</Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Centralizovaná správa přístupových práv pro uživatele a role
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  sx={{ mt: 'auto' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/permissions');
                   }}
                 >
                   Otevřít

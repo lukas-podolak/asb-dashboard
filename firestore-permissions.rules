@@ -1,0 +1,79 @@
+// Firestore Security Rules pro systém správy oprávnění
+// Přidejte tyto pravidla do vašeho firestore.rules souboru
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper funkce - Je uživatel admin?
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['ASB_ADMIN']);
+    }
+    
+    // Helper funkce - Je uživatel přihlášen?
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // ============= ROLE PERMISSIONS =============
+    match /rolePermissions/{document} {
+      // Čtení: Všichni přihlášení uživatelé mohou číst oprávnění rolí
+      allow read: if isAuthenticated();
+      
+      // Zápis, vytvoření, smazání: Pouze admin
+      allow write, create, delete: if isAdmin();
+      
+      // Validace dat při vytvoření/update
+      allow create, update: if isAdmin() &&
+        request.resource.data.keys().hasAll(['roleId', 'pageId', 'accessLevel', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy']) &&
+        request.resource.data.accessLevel in ['NONE', 'READ', 'READ_WRITE', 'FULL'];
+    }
+    
+    // ============= USER PERMISSIONS =============
+    match /userPermissions/{document} {
+      // Čtení: Všichni přihlášení uživatelé mohou číst oprávnění
+      // (potřebné pro výpočet efektivních oprávnění)
+      allow read: if isAuthenticated();
+      
+      // Zápis, vytvoření, smazání: Pouze admin
+      allow write, create, delete: if isAdmin();
+      
+      // Dodatečná validace: Admin nemůže sám sobě odebrat přístup k user-management
+      allow update, delete: if isAdmin() &&
+        !(request.resource.data.userId == request.auth.uid &&
+          request.resource.data.pageId == 'USER_MANAGEMENT' &&
+          request.resource.data.accessLevel == 'NONE');
+      
+      // Validace dat při vytvoření/update
+      allow create, update: if isAdmin() &&
+        request.resource.data.keys().hasAll(['userId', 'pageId', 'accessLevel', 'overridesRole', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy']) &&
+        request.resource.data.accessLevel in ['NONE', 'READ', 'READ_WRITE', 'FULL'] &&
+        request.resource.data.overridesRole is bool;
+    }
+    
+    // ============= PERMISSION AUDIT LOG =============
+    match /permissionAudit/{document} {
+      // Čtení: Pouze admin
+      allow read: if isAdmin();
+      
+      // Vytvoření: Pouze admin (audit záznamy se nikdy nemažou ani neupravují)
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll(['timestamp', 'adminId', 'adminEmail', 'action', 'targetType', 'targetId', 'pageId', 'newAccessLevel']) &&
+        request.resource.data.action in ['CREATE', 'UPDATE', 'DELETE'] &&
+        request.resource.data.targetType in ['USER', 'ROLE'] &&
+        request.resource.data.adminId == request.auth.uid;
+      
+      // Update a delete jsou zakázány - audit je immutable
+      allow update, delete: if false;
+    }
+    
+    // ============= USERS COLLECTION =============
+    // Existující pravidla pro users kolekci
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}
