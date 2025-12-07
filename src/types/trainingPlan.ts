@@ -21,9 +21,11 @@ export interface TrainingPlan {
   date: Date; // Datum tréninku
   groupId: string; // ID tréninkové skupiny
   groupName: string; // Název skupiny (pro rychlý přístup)
+  multiGroupId?: string; // Společný identifikátor pro plány vytvořené pro více skupin najednou
   
   // Speciální pole pro závody
   raceProposalsUrl?: string; // URL odkaz na propozice závodu (pouze pro typ RACE)
+  excludeFromStats?: boolean; // Vyloučit tento závod ze statistik (pro dobrovolné/nedůležité závody)
   
   // Individuální přístup pro vybrané členy (u společných tréninků)
   individualAccessMembers?: number[]; // ID členů, pro které je společný trénink nastaven jako individuální
@@ -66,7 +68,9 @@ export interface UpsertTrainingPlan {
   date: Date;
   groupId: string;
   raceProposalsUrl?: string; // Odkaz na propozice (pouze pro závody)
+  excludeFromStats?: boolean; // Vyloučit ze statistik (pouze pro závody)
   individualAccessMembers?: number[]; // ID členů s individuálním přístupem (pouze pro společné tréninky)
+  multiGroupId?: string; // Společný identifikátor pro plány vytvořené pro více skupin najednou
 }
 
 // DTO pro poznámku o provedení

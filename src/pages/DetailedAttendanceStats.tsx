@@ -84,6 +84,7 @@ const DetailedAttendanceStats: React.FC = () => {
   const periodParam = searchParams.get('period') || 'Toto období';
   
   const [tab, setTab] = useState(0);
+  const [statsSubTab, setStatsSubTab] = useState(0);
   const [group, setGroup] = useState<TrainingGroup | null>(null);
   const [stats, setStats] = useState<GroupAttendanceStats | null>(null);
   const [trainings, setTrainings] = useState<TrainingPlan[]>([]);
@@ -337,128 +338,214 @@ const DetailedAttendanceStats: React.FC = () => {
           </Paper>
 
           <TabPanel value={tab} index={0}>
-            <TableContainer component={Paper}>
-              <Table size={isMobile ? 'small' : 'medium'}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Člen</TableCell>
-                    {!isMobile && <TableCell align="center">Celkem</TableCell>}
-                    <TableCell align="center">
-                      <PresentIcon fontSize="small" color="success" />
-                    </TableCell>
-                    <TableCell align="center">
-                      <LateIcon fontSize="small" color="warning" />
-                    </TableCell>
-                    {!isMobile && (
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+              <Tabs value={statsSubTab} onChange={(_, newValue) => setStatsSubTab(newValue)}>
+                <Tab label="Tréninky" />
+                <Tab label="Závody" />
+              </Tabs>
+            </Box>
+
+            {/* Tabulka tréninků */}
+            {statsSubTab === 0 && (
+              <TableContainer component={Paper}>
+                <Table size={isMobile ? 'small' : 'medium'}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Člen</TableCell>
+                      {!isMobile && <TableCell align="center">Celkem</TableCell>}
                       <TableCell align="center">
-                        <LeftEarlyIcon fontSize="small" color="info" />
-                      </TableCell>
-                    )}
-                    <TableCell align="center">
-                      <ExcusedIcon fontSize="small" color="primary" />
-                    </TableCell>
-                    <TableCell align="center">
-                      <AbsentIcon fontSize="small" color="error" />
-                    </TableCell>
-                    <TableCell align="center">Účast</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {stats?.memberStats.map((member) => (
-                    <TableRow 
-                      key={member.memberId}
-                      onClick={() => handleMemberClick(member)}
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': {
-                          bgcolor: 'action.hover',
-                        },
-                      }}
-                    >
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {member.memberName}
-                        </Typography>
-                        {member.memberEmail && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            {member.memberEmail}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      {!isMobile && (
-                        <TableCell align="center">{member.totalTrainings}</TableCell>
-                      )}
-                      <TableCell align="center">
-                        <Chip 
-                          label={member.present} 
-                          size="small" 
-                          color="success"
-                          variant="outlined"
-                        />
+                        <PresentIcon fontSize="small" color="success" />
                       </TableCell>
                       <TableCell align="center">
-                        <Chip 
-                          label={member.late} 
-                          size="small" 
-                          color="warning"
-                          variant="outlined"
-                        />
+                        <LateIcon fontSize="small" color="warning" />
                       </TableCell>
                       {!isMobile && (
                         <TableCell align="center">
-                          <Chip 
-                            label={member.leftEarly} 
-                            size="small" 
-                            color="info"
-                            variant="outlined"
-                          />
+                          <LeftEarlyIcon fontSize="small" color="info" />
                         </TableCell>
                       )}
                       <TableCell align="center">
-                        <Chip 
-                          label={member.excused} 
-                          size="small" 
-                          color="primary"
-                          variant="outlined"
-                        />
+                        <ExcusedIcon fontSize="small" color="primary" />
                       </TableCell>
                       <TableCell align="center">
-                        <Chip 
-                          label={member.unexcused} 
-                          size="small" 
-                          color="error"
-                          variant="outlined"
-                        />
+                        <AbsentIcon fontSize="small" color="error" />
                       </TableCell>
-                      <TableCell align="center">
-                        <Box>
-                          <Typography 
-                            variant="body2" 
-                            fontWeight="bold"
-                            sx={{ color: getAttendanceColor(member.attendanceRate) }}
-                          >
-                            {member.attendanceRate.toFixed(1)}%
-                          </Typography>
-                          <LinearProgress
-                            variant="determinate"
-                            value={member.attendanceRate}
-                            sx={{
-                              mt: 0.5,
-                              height: 6,
-                              borderRadius: 1,
-                              bgcolor: 'grey.200',
-                              '& .MuiLinearProgress-bar': {
-                                bgcolor: getAttendanceColor(member.attendanceRate),
-                              },
-                            }}
-                          />
-                        </Box>
-                      </TableCell>
+                      <TableCell align="center">Účast</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {stats?.memberStats.map((member) => (
+                      <TableRow 
+                        key={member.memberId}
+                        onClick={() => handleMemberClick(member)}
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
+                        }}
+                      >
+                        <TableCell>
+                          <Typography variant="body2" fontWeight="medium">
+                            {member.memberName}
+                          </Typography>
+                          {member.memberEmail && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {member.memberEmail}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        {!isMobile && (
+                          <TableCell align="center">{member.totalTrainings}</TableCell>
+                        )}
+                        <TableCell align="center">
+                          <Chip 
+                            label={member.present} 
+                            size="small" 
+                            color="success"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip 
+                            label={member.late} 
+                            size="small" 
+                            color="warning"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        {!isMobile && (
+                          <TableCell align="center">
+                            <Chip 
+                              label={member.leftEarly} 
+                              size="small" 
+                              color="info"
+                              variant="outlined"
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell align="center">
+                          <Chip 
+                            label={member.excused} 
+                            size="small" 
+                            color="primary"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip 
+                            label={member.unexcused} 
+                            size="small" 
+                            color="error"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Box>
+                            <Typography 
+                              variant="body2" 
+                              fontWeight="bold"
+                              sx={{ color: getAttendanceColor(member.attendanceRate) }}
+                            >
+                              {member.attendanceRate.toFixed(1)}%
+                            </Typography>
+                            <LinearProgress
+                              variant="determinate"
+                              value={member.attendanceRate}
+                              sx={{
+                                mt: 0.5,
+                                height: 6,
+                                borderRadius: 1,
+                                bgcolor: 'grey.200',
+                                '& .MuiLinearProgress-bar': {
+                                  bgcolor: getAttendanceColor(member.attendanceRate),
+                                },
+                              }}
+                            />
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+
+            {/* Tabulka závodů */}
+            {statsSubTab === 1 && (
+              <TableContainer component={Paper}>
+                <Table size={isMobile ? 'small' : 'medium'}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Člen</TableCell>
+                      <TableCell align="center">Celkem</TableCell>
+                      <TableCell align="center">Účast</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {stats?.memberStats.map((member) => (
+                      <TableRow 
+                        key={member.memberId}
+                        onClick={() => handleMemberClick(member)}
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
+                        }}
+                      >
+                        <TableCell>
+                          <Typography variant="body2" fontWeight="medium">
+                            {member.memberName}
+                          </Typography>
+                          {member.memberEmail && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {member.memberEmail}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip 
+                            label={member.totalRaces} 
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          {member.totalRaces > 0 ? (
+                            <Box>
+                              <Typography 
+                                variant="body2" 
+                                fontWeight="bold"
+                                sx={{ color: getAttendanceColor(member.racesRate) }}
+                              >
+                                {member.racesRate.toFixed(1)}%
+                              </Typography>
+                              <LinearProgress
+                                variant="determinate"
+                                value={member.racesRate}
+                                sx={{
+                                  mt: 0.5,
+                                  height: 6,
+                                  borderRadius: 1,
+                                  bgcolor: 'grey.200',
+                                  '& .MuiLinearProgress-bar': {
+                                    bgcolor: getAttendanceColor(member.racesRate),
+                                  },
+                                }}
+                              />
+                            </Box>
+                          ) : (
+                            <Typography variant="body2" color="text.disabled">-</Typography>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </TabPanel>
 
           <TabPanel value={tab} index={1}>
