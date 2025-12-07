@@ -53,6 +53,10 @@ export interface MemberAttendanceStats {
   unknown: number; // Nezapsané
   attendanceRate: number; // % (present + late + leftEarly) / total
   activeRate: number; // % (present) / total
+  // Statistiky závodů (pouze závody započítané do statistik)
+  totalRaces: number; // Celkový počet závodů
+  racesPresent: number; // Účast na závodech
+  racesRate: number; // % účasti na závodech
 }
 
 // Statistiky docházky skupiny

@@ -31,6 +31,7 @@ import {
   Checkbox,
   ListItemText,
   FormHelperText,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -118,6 +119,7 @@ const TrainingPlans: React.FC = () => {
     date: new Date(),
     groupId: '',
     raceProposalsUrl: '',
+    excludeFromStats: false,
     individualAccessMembers: [],
   });
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]); // Pro multi-select při vytváření
@@ -297,6 +299,7 @@ const TrainingPlans: React.FC = () => {
       date: plan.date,
       groupId: plan.groupId,
       raceProposalsUrl: plan.raceProposalsUrl || '',
+      excludeFromStats: plan.excludeFromStats || false,
       individualAccessMembers: plan.individualAccessMembers || [],
     });
     setOpenEditDialog(true);
@@ -332,6 +335,7 @@ const TrainingPlans: React.FC = () => {
       date: new Date(),
       groupId: myGroups.length > 0 ? myGroups[0].id : '',
       raceProposalsUrl: '',
+      excludeFromStats: false,
       individualAccessMembers: [],
     });
     setSelectedGroupIds([]);
@@ -1202,16 +1206,28 @@ const TrainingPlans: React.FC = () => {
             </FormControl>
             
             {formData.type === TT.RACE && (
-              <TextField
-                margin="dense"
-                label="Odkaz na propozice"
-                type="url"
-                fullWidth
-                value={formData.raceProposalsUrl || ''}
-                onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
-                placeholder="https://example.com/propozice.pdf"
-                helperText="Volitelné: Odkaz na propozice závodu"
-              />
+              <>
+                <TextField
+                  margin="dense"
+                  label="Odkaz na propozice"
+                  type="url"
+                  fullWidth
+                  value={formData.raceProposalsUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
+                  placeholder="https://example.com/propozice.pdf"
+                  helperText="Volitelné: Odkaz na propozice závodu"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.excludeFromStats || false}
+                      onChange={(e) => setFormData({ ...formData, excludeFromStats: e.target.checked })}
+                    />
+                  }
+                  label="Vyloučit tento závod ze statistik docházky"
+                  sx={{ mt: 1 }}
+                />
+              </>
             )}
             
             {formData.type === TT.COMMON && selectedGroupIds.length === 1 && formData.groupId && (
@@ -1343,16 +1359,28 @@ const TrainingPlans: React.FC = () => {
             </FormControl>
             
             {formData.type === TT.RACE && (
-              <TextField
-                margin="dense"
-                label="Odkaz na propozice"
-                type="url"
-                fullWidth
-                value={formData.raceProposalsUrl || ''}
-                onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
-                placeholder="https://example.com/propozice.pdf"
-                helperText="Volitelné: Odkaz na propozice závodu"
-              />
+              <>
+                <TextField
+                  margin="dense"
+                  label="Odkaz na propozice"
+                  type="url"
+                  fullWidth
+                  value={formData.raceProposalsUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
+                  placeholder="https://example.com/propozice.pdf"
+                  helperText="Volitelné: Odkaz na propozice závodu"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.excludeFromStats || false}
+                      onChange={(e) => setFormData({ ...formData, excludeFromStats: e.target.checked })}
+                    />
+                  }
+                  label="Vyloučit tento závod ze statistik docházky"
+                  sx={{ mt: 1 }}
+                />
+              </>
             )}
             
             {formData.type === TT.COMMON && formData.groupId && (

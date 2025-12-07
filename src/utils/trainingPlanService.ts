@@ -37,6 +37,7 @@ const mapFirestoreToTrainingPlan = (id: string, data: any): TrainingPlan => {
     executedAt: data.executedAt?.toDate(),
     executedBy: data.executedBy,
     raceProposalsUrl: data.raceProposalsUrl,
+    excludeFromStats: data.excludeFromStats || false,
     individualAccessMembers: data.individualAccessMembers || [],
     memberNotes: data.memberNotes ? data.memberNotes.map((note: any) => ({
       memberId: note.memberId,
@@ -200,6 +201,11 @@ export const createTrainingPlan = async (
     newPlan.raceProposalsUrl = data.raceProposalsUrl.trim();
   }
   
+  // Přidat příznak vyloučení ze statistik (pouze pro závody)
+  if (data.excludeFromStats !== undefined) {
+    newPlan.excludeFromStats = data.excludeFromStats;
+  }
+  
   // Přidat individuální přístup pro vybrané členy (pouze pro společné tréninky)
   if (data.individualAccessMembers && data.individualAccessMembers.length > 0) {
     newPlan.individualAccessMembers = data.individualAccessMembers;
@@ -232,6 +238,9 @@ export const updateTrainingPlan = async (
   if (data.type !== undefined) updateData.type = data.type;
   if (data.raceProposalsUrl !== undefined) {
     updateData.raceProposalsUrl = data.raceProposalsUrl ? data.raceProposalsUrl.trim() : null;
+  }
+  if (data.excludeFromStats !== undefined) {
+    updateData.excludeFromStats = data.excludeFromStats;
   }
   if (data.individualAccessMembers !== undefined) {
     updateData.individualAccessMembers = data.individualAccessMembers.length > 0 ? data.individualAccessMembers : null;
@@ -369,6 +378,11 @@ export const duplicateTrainingPlan = async (
   // Zkopírovat odkaz na propozice pro závody
   if (original.raceProposalsUrl) {
     newPlan.raceProposalsUrl = original.raceProposalsUrl;
+  }
+  
+  // Zkopírovat příznak vyloučení ze statistik
+  if (original.excludeFromStats) {
+    newPlan.excludeFromStats = original.excludeFromStats;
   }
   
   // Zkopírovat individuální přístup členů
