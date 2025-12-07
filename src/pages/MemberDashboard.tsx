@@ -21,6 +21,8 @@ import {
   ExpandMore as ExpandMoreIcon,
   Event as EventIcon,
   History as HistoryIcon,
+  EmojiEvents as RaceIcon,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import { format, addDays, subDays, startOfDay } from 'date-fns';
 import { cs } from 'date-fns/locale';
@@ -250,6 +252,7 @@ const MemberDashboard: React.FC = () => {
                 const trainingDate = training.date instanceof Date ? training.date : new Date(training.date);
                 const timeStr = format(trainingDate, 'HH:mm');
                 const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                const isRace = training.type === TrainingType.RACE;
                 const canAddNoteToThis = canAddNote(training);
                 const memberNote = getMemberNote(training);
                 
@@ -259,6 +262,7 @@ const MemberDashboard: React.FC = () => {
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                         <Box flex={1}>
                           <Box display="flex" alignItems="center" gap={1}>
+                            {isRace && <RaceIcon color="warning" />}
                             <Typography variant="h6" color="text.primary">
                               {training.name}
                             </Typography>
@@ -270,12 +274,36 @@ const MemberDashboard: React.FC = () => {
                                 variant="outlined"
                               />
                             )}
+                            {isRace && (
+                              <Chip
+                                icon={<RaceIcon />}
+                                label="Závod"
+                                size="small"
+                                color="warning"
+                              />
+                            )}
                           </Box>
                           <Typography variant="body2" color="text.secondary">
                             {timeStr}
                           </Typography>
                         </Box>
                       </Box>
+
+                      {isRace && training.raceProposalsUrl && (
+                        <Box sx={{ mb: 1 }}>
+                          <Button
+                            startIcon={<LinkIcon />}
+                            size="small"
+                            variant="contained"
+                            color="warning"
+                            href={training.raceProposalsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Zobrazit propozice
+                          </Button>
+                        </Box>
+                      )}
 
                       {training.description && (
                         <>
@@ -352,6 +380,7 @@ const MemberDashboard: React.FC = () => {
                 const dayName = format(trainingDate, 'EEEE', { locale: cs });
                 const dateStr = format(trainingDate, 'd. MMMM yyyy', { locale: cs });
                 const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                const isRace = training.type === TrainingType.RACE;
                 
                 return (
                   <Card key={training.id} variant="outlined">
@@ -359,6 +388,7 @@ const MemberDashboard: React.FC = () => {
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                         <Box flex={1}>
                           <Box display="flex" alignItems="center" gap={1}>
+                            {isRace && <RaceIcon color="warning" />}
                             <Typography variant="h6">
                               {training.name}
                             </Typography>
@@ -370,12 +400,36 @@ const MemberDashboard: React.FC = () => {
                                 variant="outlined"
                               />
                             )}
+                            {isRace && (
+                              <Chip
+                                icon={<RaceIcon />}
+                                label="Závod"
+                                size="small"
+                                color="warning"
+                              />
+                            )}
                           </Box>
                           <Typography variant="body2" color="text.secondary">
                             {dayName}, {dateStr}
                           </Typography>
                         </Box>
                       </Box>
+
+                      {isRace && training.raceProposalsUrl && (
+                        <Box sx={{ mb: 1 }}>
+                          <Button
+                            startIcon={<LinkIcon />}
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            href={training.raceProposalsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Zobrazit propozice
+                          </Button>
+                        </Box>
+                      )}
 
                       {training.description && (
                         <>
@@ -426,6 +480,7 @@ const MemberDashboard: React.FC = () => {
                   const dayName = format(trainingDate, 'EEEE', { locale: cs });
                   const dateStr = format(trainingDate, 'd. MMMM yyyy', { locale: cs });
                   const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                  const isRace = training.type === TrainingType.RACE;
                   const canAddNoteToThis = canAddNote(training);
                   const memberNote = getMemberNote(training);
                   
@@ -435,6 +490,7 @@ const MemberDashboard: React.FC = () => {
                         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                           <Box flex={1}>
                             <Box display="flex" alignItems="center" gap={1}>
+                              {isRace && <RaceIcon color="warning" />}
                               <Typography variant="h6">
                                 {training.name}
                               </Typography>
@@ -446,12 +502,36 @@ const MemberDashboard: React.FC = () => {
                                   variant="outlined"
                                 />
                               )}
+                              {isRace && (
+                                <Chip
+                                  icon={<RaceIcon />}
+                                  label="Závod"
+                                  size="small"
+                                  color="warning"
+                                />
+                              )}
                             </Box>
                             <Typography variant="body2" color="text.secondary">
                               {dayName}, {dateStr}
                             </Typography>
                           </Box>
                         </Box>
+
+                        {isRace && training.raceProposalsUrl && (
+                          <Box sx={{ mb: 1 }}>
+                            <Button
+                              startIcon={<LinkIcon />}
+                              size="small"
+                              variant="outlined"
+                              color="warning"
+                              href={training.raceProposalsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Zobrazit propozice
+                            </Button>
+                          </Box>
+                        )}
 
                         {training.description && (
                           <>
