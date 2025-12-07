@@ -25,6 +25,9 @@ export interface TrainingPlan {
   // Speciální pole pro závody
   raceProposalsUrl?: string; // URL odkaz na propozice závodu (pouze pro typ RACE)
   
+  // Individuální přístup pro vybrané členy (u společných tréninků)
+  individualAccessMembers?: number[]; // ID členů, pro které je společný trénink nastaven jako individuální
+  
   // Status tréninku
   status: TrainingStatus; // Stav tréninku (naplánován/dokončen/vynechán)
   
@@ -63,6 +66,7 @@ export interface UpsertTrainingPlan {
   date: Date;
   groupId: string;
   raceProposalsUrl?: string; // Odkaz na propozice (pouze pro závody)
+  individualAccessMembers?: number[]; // ID členů s individuálním přístupem (pouze pro společné tréninky)
 }
 
 // DTO pro poznámku o provedení
