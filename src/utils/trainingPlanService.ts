@@ -32,6 +32,7 @@ const mapFirestoreToTrainingPlan = (id: string, data: any): TrainingPlan => {
     date: data.date?.toDate() || new Date(),
     groupId: data.groupId,
     groupName: data.groupName,
+    multiGroupId: data.multiGroupId,
     status: data.status || TrainingStatus.PLANNED,
     executionNote: data.executionNote,
     executedAt: data.executedAt?.toDate(),
@@ -196,6 +197,11 @@ export const createTrainingPlan = async (
     updatedBy: createdBy,
   };
   
+  // Přidat multiGroupId pokud je poskytnut
+  if (data.multiGroupId) {
+    newPlan.multiGroupId = data.multiGroupId;
+  }
+  
   // Přidat odkaz na propozice pro závody
   if (data.raceProposalsUrl) {
     newPlan.raceProposalsUrl = data.raceProposalsUrl.trim();
@@ -347,7 +353,8 @@ export const getTrainingPlanStats = async (trainerId?: string): Promise<Training
 export const duplicateTrainingPlan = async (
   id: string,
   newDate: Date,
-  createdBy: string
+  createdBy: string,
+  newMultiGroupId?: string
 ): Promise<string> => {
   const original = await getTrainingPlan(id);
   if (!original) {
@@ -366,6 +373,7 @@ export const duplicateTrainingPlan = async (
     date: Timestamp.fromDate(normalizedDate),
     groupId: original.groupId,
     groupName: original.groupName,
+    status: TrainingStatus.PLANNED,
     executionNote: null,
     executedAt: null,
     executedBy: null,
@@ -374,6 +382,14 @@ export const duplicateTrainingPlan = async (
     updatedAt: now,
     updatedBy: createdBy,
   };
+  
+  // Zkopírovat multiGroupId nebo použít nový
+  if (newMultiGroupId) {
+    newPlan.multiGroupId = newMultiGroupId;
+  } else if (original.multiGroupId) {
+    // Pokud původní plán měl multiGroupId a není poskytnut nový, nevytvářet duplikát s multi-group vazbou
+    // (ponechat undefined, aby se vytvořil samostatný plán)
+  }
   
   // Zkopírovat odkaz na propozice pro závody
   if (original.raceProposalsUrl) {
