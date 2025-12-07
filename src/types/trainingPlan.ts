@@ -2,6 +2,7 @@
 export enum TrainingType {
   COMMON = 'společný',
   INDIVIDUAL = 'individuální',
+  RACE = 'závod',
 }
 
 // Status tréninku
@@ -16,10 +17,13 @@ export interface TrainingPlan {
   id: string; // Firestore document ID
   name: string; // Název tréninku
   description: string; // Popis tréninku
-  type: TrainingType; // Společný nebo individuální
+  type: TrainingType; // Společný nebo individuální nebo závod
   date: Date; // Datum tréninku
   groupId: string; // ID tréninkové skupiny
   groupName: string; // Název skupiny (pro rychlý přístup)
+  
+  // Speciální pole pro závody
+  raceProposalsUrl?: string; // URL odkaz na propozice závodu (pouze pro typ RACE)
   
   // Status tréninku
   status: TrainingStatus; // Stav tréninku (naplánován/dokončen/vynechán)
@@ -58,6 +62,7 @@ export interface UpsertTrainingPlan {
   type: TrainingType;
   date: Date;
   groupId: string;
+  raceProposalsUrl?: string; // Odkaz na propozice (pouze pro závody)
 }
 
 // DTO pro poznámku o provedení

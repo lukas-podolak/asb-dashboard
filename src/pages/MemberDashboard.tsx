@@ -13,6 +13,13 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  IconButton,
+  ToggleButtonGroup,
+  ToggleButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   CalendarToday as CalendarIcon,
@@ -21,8 +28,14 @@ import {
   ExpandMore as ExpandMoreIcon,
   Event as EventIcon,
   History as HistoryIcon,
+  EmojiEvents as RaceIcon,
+  Link as LinkIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  List as ListIcon,
+  ViewModule as CalendarViewIcon,
 } from '@mui/icons-material';
-import { format, addDays, subDays, startOfDay } from 'date-fns';
+import { format, addDays, subDays, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import Layout from '../components/Layout';
 import MemberTrainingNoteDialog from '../components/MemberTrainingNoteDialog';
@@ -46,6 +59,14 @@ const MemberDashboard: React.FC = () => {
   const [selectedTraining, setSelectedTraining] = useState<TrainingPlan | null>(null);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
+  
+  // Kalendářové zobrazení
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [allTrainingsForCalendar, setAllTrainingsForCalendar] = useState<(TrainingPlan & { groupName: string })[]>([]);
+  const [selectedDayPlans, setSelectedDayPlans] = useState<(TrainingPlan & { groupName: string })[]>([]);
+  const [openDayDetailDialog, setOpenDayDetailDialog] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const loadMemberData = useCallback(async () => {
     if (!currentUser) return;
@@ -135,6 +156,7 @@ const MemberDashboard: React.FC = () => {
       setTodayTrainings(today);
       setPastTrainings(past);
       setUpcomingTrainings(upcoming);
+      setAllTrainingsForCalendar(allTrainings);
 
     } catch (err) {
       console.error('Chyba při načítání dat:', err);
@@ -147,6 +169,29 @@ const MemberDashboard: React.FC = () => {
   useEffect(() => {
     loadMemberData();
   }, [loadMemberData]);
+
+  // Kalendářové funkce
+  const handlePrevMonth = () => {
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleDayClick = (date: Date, plans: (TrainingPlan & { groupName: string })[]) => {
+    if (plans.length === 0) return;
+    setSelectedDate(date);
+    setSelectedDayPlans(plans);
+    setOpenDayDetailDialog(true);
+  };
+
+  const getTrainingsForDate = (date: Date) => {
+    return allTrainingsForCalendar.filter(training => {
+      const trainingDate = training.date instanceof Date ? training.date : new Date(training.date);
+      return isSameDay(trainingDate, date);
+    });
+  };
 
   const handleOpenNoteDialog = (training: TrainingPlan & { groupName: string }) => {
     setSelectedTraining(training);
@@ -163,8 +208,9 @@ const MemberDashboard: React.FC = () => {
   };
 
   const canAddNote = (training: TrainingPlan & { groupName: string }) => {
-    // Pouze individuální tréninky
-    if (training.type !== TrainingType.INDIVIDUAL) return false;
+    // Poznámky lze přidávat k individuálním tréningům a závodům
+    // (společné tréninky COMMON nemají poznámky členů)
+    if (training.type === TrainingType.COMMON) return false;
     
     // Pouze tréninky dnes nebo v minulosti
     const trainingDate = training.date instanceof Date ? training.date : new Date(training.date);
@@ -231,6 +277,141 @@ const MemberDashboard: React.FC = () => {
           )}
         </Paper>
 
+        {/* Přepínač zobrazení */}
+        <Box display="flex" justifyContent="center" mb={3}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, newMode) => newMode && setViewMode(newMode)}
+            aria-label="režim zobrazení"
+          >
+            <ToggleButton value="list" aria-label="seznam">
+              <ListIcon sx={{ mr: 1 }} />
+              Seznam
+            </ToggleButton>
+            <ToggleButton value="calendar" aria-label="kalendář">
+              <CalendarViewIcon sx={{ mr: 1 }} />
+              Kalendář
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {/* Kalendářové zobrazení */}
+        {viewMode === 'calendar' ? (
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <IconButton onClick={handlePrevMonth}>
+                <ChevronLeftIcon />
+              </IconButton>
+              <Typography variant="h5">
+                {format(calendarMonth, 'LLLL yyyy', { locale: cs })}
+              </Typography>
+              <IconButton onClick={handleNextMonth}>
+                <ChevronRightIcon />
+              </IconButton>
+            </Box>
+
+            {/* Kalendářová mřížka */}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                gap: 1,
+              }}
+            >
+              {/* Názvy dnů */}
+              {['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'].map((day) => (
+                <Box
+                  key={day}
+                  sx={{
+                    p: 1,
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                    color: 'text.secondary',
+                  }}
+                >
+                  {day}
+                </Box>
+              ))}
+
+              {/* Dny v měsíci */}
+              {(() => {
+                const monthStart = startOfMonth(calendarMonth);
+                const monthEnd = endOfMonth(calendarMonth);
+                const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+                
+                // Přidat prázdné buňky na začátek (pondělí = 0)
+                const startDay = getDay(monthStart);
+                const emptyDays = startDay === 0 ? 6 : startDay - 1;
+                
+                return (
+                  <>
+                    {Array.from({ length: emptyDays }).map((_, i) => (
+                      <Box key={`empty-${i}`} />
+                    ))}
+                    
+                    {daysInMonth.map((day) => {
+                      const trainingsOnDay = getTrainingsForDate(day);
+                      const isToday = isSameDay(day, new Date());
+                      const hasTrainings = trainingsOnDay.length > 0;
+                      
+                      return (
+                        <Box
+                          key={day.toISOString()}
+                          onClick={() => handleDayClick(day, trainingsOnDay)}
+                          sx={{
+                            p: 1,
+                            minHeight: 80,
+                            border: '1px solid',
+                            borderColor: isToday ? 'primary.main' : 'divider',
+                            borderRadius: 1,
+                            cursor: hasTrainings ? 'pointer' : 'default',
+                            bgcolor: isToday ? 'primary.light' : hasTrainings ? 'action.hover' : 'background.paper',
+                            '&:hover': hasTrainings ? {
+                              bgcolor: 'action.selected',
+                            } : {},
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            fontWeight={isToday ? 'bold' : 'normal'}
+                            color={isToday ? 'primary.contrastText' : 'text.primary'}
+                          >
+                            {format(day, 'd')}
+                          </Typography>
+                          
+                          {trainingsOnDay.map((training) => (
+                            <Chip
+                              key={training.id}
+                              label={training.type === TrainingType.RACE ? '🏆' : training.name.substring(0, 10)}
+                              size="small"
+                              color={
+                                training.type === TrainingType.RACE ? 'warning' :
+                                training.type === TrainingType.INDIVIDUAL ? 'secondary' : 'primary'
+                              }
+                              sx={{ 
+                                mt: 0.5, 
+                                fontSize: '0.7rem',
+                                height: 20,
+                                width: '100%',
+                                '.MuiChip-label': {
+                                  px: 0.5,
+                                }
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      );
+                    })}
+                  </>
+                );
+              })()}
+            </Box>
+          </Paper>
+        ) : (
+          <>
+            {/* Seznam zobrazení - původní kód */}
+
         {/* Dnešní tréninky - hlavní sekce */}
         <Paper sx={{ p: 3, mb: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
           <Box display="flex" alignItems="center" gap={1} mb={2}>
@@ -250,6 +431,7 @@ const MemberDashboard: React.FC = () => {
                 const trainingDate = training.date instanceof Date ? training.date : new Date(training.date);
                 const timeStr = format(trainingDate, 'HH:mm');
                 const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                const isRace = training.type === TrainingType.RACE;
                 const canAddNoteToThis = canAddNote(training);
                 const memberNote = getMemberNote(training);
                 
@@ -259,6 +441,7 @@ const MemberDashboard: React.FC = () => {
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                         <Box flex={1}>
                           <Box display="flex" alignItems="center" gap={1}>
+                            {isRace && <RaceIcon color="warning" />}
                             <Typography variant="h6" color="text.primary">
                               {training.name}
                             </Typography>
@@ -270,12 +453,36 @@ const MemberDashboard: React.FC = () => {
                                 variant="outlined"
                               />
                             )}
+                            {isRace && (
+                              <Chip
+                                icon={<RaceIcon />}
+                                label="Závod"
+                                size="small"
+                                color="warning"
+                              />
+                            )}
                           </Box>
                           <Typography variant="body2" color="text.secondary">
                             {timeStr}
                           </Typography>
                         </Box>
                       </Box>
+
+                      {isRace && training.raceProposalsUrl && (
+                        <Box sx={{ mb: 1 }}>
+                          <Button
+                            startIcon={<LinkIcon />}
+                            size="small"
+                            variant="contained"
+                            color="warning"
+                            href={training.raceProposalsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Zobrazit propozice
+                          </Button>
+                        </Box>
+                      )}
 
                       {training.description && (
                         <>
@@ -352,6 +559,7 @@ const MemberDashboard: React.FC = () => {
                 const dayName = format(trainingDate, 'EEEE', { locale: cs });
                 const dateStr = format(trainingDate, 'd. MMMM yyyy', { locale: cs });
                 const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                const isRace = training.type === TrainingType.RACE;
                 
                 return (
                   <Card key={training.id} variant="outlined">
@@ -359,6 +567,7 @@ const MemberDashboard: React.FC = () => {
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                         <Box flex={1}>
                           <Box display="flex" alignItems="center" gap={1}>
+                            {isRace && <RaceIcon color="warning" />}
                             <Typography variant="h6">
                               {training.name}
                             </Typography>
@@ -370,12 +579,36 @@ const MemberDashboard: React.FC = () => {
                                 variant="outlined"
                               />
                             )}
+                            {isRace && (
+                              <Chip
+                                icon={<RaceIcon />}
+                                label="Závod"
+                                size="small"
+                                color="warning"
+                              />
+                            )}
                           </Box>
                           <Typography variant="body2" color="text.secondary">
                             {dayName}, {dateStr}
                           </Typography>
                         </Box>
                       </Box>
+
+                      {isRace && training.raceProposalsUrl && (
+                        <Box sx={{ mb: 1 }}>
+                          <Button
+                            startIcon={<LinkIcon />}
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            href={training.raceProposalsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Zobrazit propozice
+                          </Button>
+                        </Box>
+                      )}
 
                       {training.description && (
                         <>
@@ -426,6 +659,7 @@ const MemberDashboard: React.FC = () => {
                   const dayName = format(trainingDate, 'EEEE', { locale: cs });
                   const dateStr = format(trainingDate, 'd. MMMM yyyy', { locale: cs });
                   const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                  const isRace = training.type === TrainingType.RACE;
                   const canAddNoteToThis = canAddNote(training);
                   const memberNote = getMemberNote(training);
                   
@@ -435,6 +669,7 @@ const MemberDashboard: React.FC = () => {
                         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
                           <Box flex={1}>
                             <Box display="flex" alignItems="center" gap={1}>
+                              {isRace && <RaceIcon color="warning" />}
                               <Typography variant="h6">
                                 {training.name}
                               </Typography>
@@ -446,12 +681,36 @@ const MemberDashboard: React.FC = () => {
                                   variant="outlined"
                                 />
                               )}
+                              {isRace && (
+                                <Chip
+                                  icon={<RaceIcon />}
+                                  label="Závod"
+                                  size="small"
+                                  color="warning"
+                                />
+                              )}
                             </Box>
                             <Typography variant="body2" color="text.secondary">
                               {dayName}, {dateStr}
                             </Typography>
                           </Box>
                         </Box>
+
+                        {isRace && training.raceProposalsUrl && (
+                          <Box sx={{ mb: 1 }}>
+                            <Button
+                              startIcon={<LinkIcon />}
+                              size="small"
+                              variant="outlined"
+                              color="warning"
+                              href={training.raceProposalsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Zobrazit propozice
+                            </Button>
+                          </Box>
+                        )}
 
                         {training.description && (
                           <>
@@ -508,7 +767,95 @@ const MemberDashboard: React.FC = () => {
             )}
           </AccordionDetails>
         </Accordion>
+          </>
+        )}
       </Box>
+
+      {/* Dialog pro detail dne v kalendáři */}
+      <Dialog
+        open={openDayDetailDialog}
+        onClose={() => setOpenDayDetailDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedDate && format(selectedDate, 'EEEE, d. MMMM yyyy', { locale: cs })}
+        </DialogTitle>
+        <DialogContent>
+          {selectedDayPlans.length === 0 ? (
+            <Typography color="text.secondary">Žádné tréninky</Typography>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+              {selectedDayPlans.map((plan) => {
+                const isIndividual = plan.type === TrainingType.INDIVIDUAL;
+                const isRace = plan.type === TrainingType.RACE;
+                
+                return (
+                  <Card key={plan.id}>
+                    <CardContent>
+                      <Box display="flex" justifyContent="space-between" alignItems="start" mb={1}>
+                        <Box flex={1}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            {isRace && <RaceIcon color="warning" />}
+                            <Typography variant="h6">
+                              {plan.name}
+                            </Typography>
+                            {isIndividual && (
+                              <Chip
+                                label="Individuální"
+                                size="small"
+                                color="secondary"
+                                variant="outlined"
+                              />
+                            )}
+                            {isRace && (
+                              <Chip
+                                icon={<RaceIcon />}
+                                label="Závod"
+                                size="small"
+                                color="warning"
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        {plan.groupName}
+                      </Typography>
+
+                      {isRace && plan.raceProposalsUrl && (
+                        <Box sx={{ mb: 2 }}>
+                          <Button
+                            startIcon={<LinkIcon />}
+                            size="medium"
+                            variant="contained"
+                            color="warning"
+                            href={plan.raceProposalsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Zobrazit propozice závodu
+                          </Button>
+                        </Box>
+                      )}
+
+                      {plan.description && (
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                          {plan.description}
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDayDetailDialog(false)}>Zavřít</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Dialog pro přidání poznámky */}
       <MemberTrainingNoteDialog
