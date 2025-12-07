@@ -43,6 +43,8 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Groups as AttendanceIcon,
+  EmojiEvents as RaceIcon,
+  Link as LinkIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -112,6 +114,7 @@ const TrainingPlans: React.FC = () => {
     type: TT.COMMON,
     date: new Date(),
     groupId: '',
+    raceProposalsUrl: '',
   });
   const [noteText, setNoteText] = useState('');
 
@@ -273,6 +276,7 @@ const TrainingPlans: React.FC = () => {
       type: plan.type,
       date: plan.date,
       groupId: plan.groupId,
+      raceProposalsUrl: plan.raceProposalsUrl || '',
     });
     setOpenEditDialog(true);
   };
@@ -523,9 +527,10 @@ const TrainingPlans: React.FC = () => {
                             </Typography>
                             <Box sx={{ mb: 1 }}>
                               <Chip 
+                                icon={plan.type === TT.RACE ? <RaceIcon /> : undefined}
                                 label={plan.type} 
                                 size="small" 
-                                color={plan.type === TT.COMMON ? 'primary' : 'secondary'}
+                                color={plan.type === TT.RACE ? 'warning' : (plan.type === TT.COMMON ? 'primary' : 'secondary')}
                                 sx={{ mr: 1 }}
                               />
                               {plan.status === TrainingStatus.COMPLETED && (
@@ -603,6 +608,22 @@ const TrainingPlans: React.FC = () => {
                                 </Paper>
                               ))}
                             </Box>
+                          </Box>
+                        )}
+                        
+                        {plan.type === TT.RACE && plan.raceProposalsUrl && (
+                          <Box sx={{ mt: 1 }}>
+                            <Button
+                              startIcon={<LinkIcon />}
+                              size="small"
+                              variant="outlined"
+                              color="warning"
+                              href={plan.raceProposalsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Propozice závodu
+                            </Button>
                           </Box>
                         )}
                         
@@ -798,8 +819,24 @@ const TrainingPlans: React.FC = () => {
                               </Box>
                             </Box>
                             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                              {plan.groupName} • {plan.type}
+                              {plan.groupName} • {plan.type === TT.RACE ? '🏆 ' : ''}{plan.type}
                             </Typography>
+
+                            {plan.type === TT.RACE && plan.raceProposalsUrl && (
+                              <Box sx={{ mb: 1 }}>
+                                <Button
+                                  startIcon={<LinkIcon />}
+                                  size="small"
+                                  variant="outlined"
+                                  color="warning"
+                                  href={plan.raceProposalsUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Propozice
+                                </Button>
+                              </Box>
+                            )}
 
                             {/* POZNÁMKY SVĚŘENCŮ - PRIORITA! */}
                             {plan.memberNotes && plan.memberNotes.length > 0 && (
@@ -1116,8 +1153,22 @@ const TrainingPlans: React.FC = () => {
               >
                 <MenuItem value={TT.COMMON}>Společný</MenuItem>
                 <MenuItem value={TT.INDIVIDUAL}>Individuální</MenuItem>
+                <MenuItem value={TT.RACE}>Závod</MenuItem>
               </Select>
             </FormControl>
+            
+            {formData.type === TT.RACE && (
+              <TextField
+                margin="dense"
+                label="Odkaz na propozice"
+                type="url"
+                fullWidth
+                value={formData.raceProposalsUrl || ''}
+                onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
+                placeholder="https://example.com/propozice.pdf"
+                helperText="Volitelné: Odkaz na propozice závodu"
+              />
+            )}
             
             <DatePicker
               label="Datum *"
@@ -1198,8 +1249,22 @@ const TrainingPlans: React.FC = () => {
               >
                 <MenuItem value={TT.COMMON}>Společný</MenuItem>
                 <MenuItem value={TT.INDIVIDUAL}>Individuální</MenuItem>
+                <MenuItem value={TT.RACE}>Závod</MenuItem>
               </Select>
             </FormControl>
+            
+            {formData.type === TT.RACE && (
+              <TextField
+                margin="dense"
+                label="Odkaz na propozice"
+                type="url"
+                fullWidth
+                value={formData.raceProposalsUrl || ''}
+                onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
+                placeholder="https://example.com/propozice.pdf"
+                helperText="Volitelné: Odkaz na propozice závodu"
+              />
+            )}
             
             <DatePicker
               label="Datum *"
@@ -1345,8 +1410,24 @@ const TrainingPlans: React.FC = () => {
                       </Box>
 
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {plan.groupName} • {plan.type}
+                        {plan.groupName} • {plan.type === TT.RACE ? '🏆 ' : ''}{plan.type}
                       </Typography>
+
+                      {plan.type === TT.RACE && plan.raceProposalsUrl && (
+                        <Box sx={{ mb: 2 }}>
+                          <Button
+                            startIcon={<LinkIcon />}
+                            size="medium"
+                            variant="contained"
+                            color="warning"
+                            href={plan.raceProposalsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Zobrazit propozice závodu
+                          </Button>
+                        </Box>
+                      )}
 
                       {/* POZNÁMKY SVĚŘENCŮ - HLAVNÍ PRIORITA! */}
                       {plan.memberNotes && plan.memberNotes.length > 0 && (

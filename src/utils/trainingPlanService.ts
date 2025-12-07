@@ -36,6 +36,7 @@ const mapFirestoreToTrainingPlan = (id: string, data: any): TrainingPlan => {
     executionNote: data.executionNote,
     executedAt: data.executedAt?.toDate(),
     executedBy: data.executedBy,
+    raceProposalsUrl: data.raceProposalsUrl,
     memberNotes: data.memberNotes ? data.memberNotes.map((note: any) => ({
       memberId: note.memberId,
       memberName: note.memberName,
@@ -176,7 +177,7 @@ export const createTrainingPlan = async (
   normalizedDate.setHours(12, 0, 0, 0); // Nastavit na poledne aby se vyhnuli timezone problémům
   
   const now = Timestamp.now();
-  const newPlan = {
+  const newPlan: any = {
     name: data.name.trim(),
     description: data.description.trim(),
     type: data.type,
@@ -192,6 +193,11 @@ export const createTrainingPlan = async (
     updatedAt: now,
     updatedBy: createdBy,
   };
+  
+  // Přidat odkaz na propozice pro závody
+  if (data.raceProposalsUrl) {
+    newPlan.raceProposalsUrl = data.raceProposalsUrl.trim();
+  }
   
   const docRef = await addDoc(collection(db, COLLECTION_NAME), newPlan);
   return docRef.id;
@@ -218,6 +224,9 @@ export const updateTrainingPlan = async (
   if (data.name !== undefined) updateData.name = data.name.trim();
   if (data.description !== undefined) updateData.description = data.description.trim();
   if (data.type !== undefined) updateData.type = data.type;
+  if (data.raceProposalsUrl !== undefined) {
+    updateData.raceProposalsUrl = data.raceProposalsUrl ? data.raceProposalsUrl.trim() : null;
+  }
   if (data.date !== undefined) {
     // Normalizovat datum na poledne aby se vyhnuli timezone problémům
     const normalizedDate = new Date(data.date);
@@ -332,7 +341,7 @@ export const duplicateTrainingPlan = async (
   normalizedDate.setHours(12, 0, 0, 0);
   
   const now = Timestamp.now();
-  const newPlan = {
+  const newPlan: any = {
     name: original.name,
     description: original.description,
     type: original.type,
@@ -347,6 +356,11 @@ export const duplicateTrainingPlan = async (
     updatedAt: now,
     updatedBy: createdBy,
   };
+  
+  // Zkopírovat odkaz na propozice pro závody
+  if (original.raceProposalsUrl) {
+    newPlan.raceProposalsUrl = original.raceProposalsUrl;
+  }
   
   const docRef = await addDoc(collection(db, COLLECTION_NAME), newPlan);
   return docRef.id;
