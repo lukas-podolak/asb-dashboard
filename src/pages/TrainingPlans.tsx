@@ -120,6 +120,7 @@ const TrainingPlans: React.FC = () => {
     raceProposalsUrl: '',
     individualAccessMembers: [],
   });
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]); // Pro multi-select při vytváření
   const [noteText, setNoteText] = useState('');
 
   const loadData = useCallback(async () => {
@@ -186,8 +187,23 @@ const TrainingPlans: React.FC = () => {
       setError('');
       if (!currentUser) return;
       
-      await createTrainingPlan(formData, currentUser.uid);
-      setSuccess('Trénink byl úspěšně vytvořen');
+      // Pokud jsou vybrány více skupin, vytvoř trénink pro každou
+      if (selectedGroupIds.length > 0) {
+        await Promise.all(
+          selectedGroupIds.map(groupId =>
+            createTrainingPlan(
+              { ...formData, groupId },
+              currentUser.uid
+            )
+          )
+        );
+        setSuccess(`Trénink byl úspěšně vytvořen pro ${selectedGroupIds.length} skupin`);
+      } else {
+        // Fallback pro případ editace (jedna skupina)
+        await createTrainingPlan(formData, currentUser.uid);
+        setSuccess('Trénink byl úspěšně vytvořen');
+      }
+      
       setOpenCreateDialog(false);
       resetForm();
       await loadData();
@@ -315,7 +331,10 @@ const TrainingPlans: React.FC = () => {
       type: TT.COMMON,
       date: new Date(),
       groupId: myGroups.length > 0 ? myGroups[0].id : '',
+      raceProposalsUrl: '',
+      individualAccessMembers: [],
     });
+    setSelectedGroupIds([]);
   };
 
   const formatDate = (date: Date): string => {
@@ -1135,18 +1154,38 @@ const TrainingPlans: React.FC = () => {
             />
             
             <FormControl fullWidth margin="dense">
-              <InputLabel>Skupina *</InputLabel>
+              <InputLabel>Skupiny *</InputLabel>
               <Select
-                value={formData.groupId}
-                onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
-                label="Skupina *"
+                multiple
+                value={selectedGroupIds}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const groupIds = typeof value === 'string' ? [value] : value;
+                  setSelectedGroupIds(groupIds);
+                  // Nastavit první vybranou skupinu jako groupId pro individualAccessMembers
+                  if (groupIds.length > 0) {
+                    setFormData({ ...formData, groupId: groupIds[0], individualAccessMembers: [] });
+                  }
+                }}
+                label="Skupiny *"
+                renderValue={(selected) => {
+                  if (selected.length === 0) return '';
+                  return selected
+                    .map(id => myGroups.find(g => g.id === id)?.name)
+                    .filter(Boolean)
+                    .join(', ');
+                }}
               >
                 {myGroups.map(group => (
                   <MenuItem key={group.id} value={group.id}>
-                    {group.name}
+                    <Checkbox checked={selectedGroupIds.indexOf(group.id) > -1} />
+                    <ListItemText primary={group.name} />
                   </MenuItem>
                 ))}
               </Select>
+              <FormHelperText>
+                Vyberte jednu nebo více skupin pro tento trénink
+              </FormHelperText>
             </FormControl>
             
             <FormControl fullWidth margin="dense">
@@ -1175,7 +1214,7 @@ const TrainingPlans: React.FC = () => {
               />
             )}
             
-            {formData.type === TT.COMMON && formData.groupId && (
+            {formData.type === TT.COMMON && selectedGroupIds.length === 1 && formData.groupId && (
               <FormControl fullWidth margin="dense">
                 <InputLabel>Individuální přístup pro členy</InputLabel>
                 <Select
@@ -1214,6 +1253,12 @@ const TrainingPlans: React.FC = () => {
               </FormControl>
             )}
             
+            {formData.type === TT.COMMON && selectedGroupIds.length > 1 && (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                Individuální přístup lze nastavit pouze při výběru jedné skupiny
+              </Alert>
+            )}
+            
             <DatePicker
               label="Datum *"
               value={formData.date}
@@ -1242,9 +1287,9 @@ const TrainingPlans: React.FC = () => {
             <Button
               onClick={handleCreatePlan}
               variant="contained"
-              disabled={!formData.name.trim() || !formData.groupId}
+              disabled={!formData.name.trim() || selectedGroupIds.length === 0}
             >
-              Vytvořit
+              Vytvořit{selectedGroupIds.length > 1 ? ` (${selectedGroupIds.length}x)` : ''}
             </Button>
           </DialogActions>
         </Dialog>
