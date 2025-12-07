@@ -30,6 +30,8 @@ import {
   List,
   ListItem,
   Divider,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   CheckCircle as PresentIcon,
@@ -72,6 +74,7 @@ const AttendanceStats: React.FC<AttendanceStatsProps> = ({ groupId, groupName })
   const [openTrainingsDialog, setOpenTrainingsDialog] = useState(false);
   const [trainings, setTrainings] = useState<TrainingPlan[]>([]);
   const [loadingTrainings, setLoadingTrainings] = useState(false);
+  const [statsTab, setStatsTab] = useState(0);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -165,26 +168,46 @@ const AttendanceStats: React.FC<AttendanceStatsProps> = ({ groupId, groupName })
   const handleExport = () => {
     if (!stats) return;
 
-    const csv = [
-      ['Jméno', 'Celkem tréninků', 'Přítomen', 'Pozdě', 'Odešel dříve', 'Omluven', 'Neomluven', 'Účast %', 'Aktivita %'].join(','),
-      ...stats.memberStats.map(m => [
-        m.memberName,
-        m.totalTrainings,
-        m.present,
-        m.late,
-        m.leftEarly,
-        m.excused,
-        m.unexcused,
-        m.attendanceRate.toFixed(1),
-        m.activeRate.toFixed(1),
-      ].join(',')),
-    ].join('\n');
+    if (statsTab === 0) {
+      // Export tréninků
+      const csv = [
+        ['Jméno', 'Celkem', 'Přítomen', 'Pozdě', 'Odešel dříve', 'Omluven', 'Neomluven', 'Účast %', 'Aktivita %'].join(','),
+        ...stats.memberStats.map(m => [
+          m.memberName,
+          m.totalTrainings,
+          m.present,
+          m.late,
+          m.leftEarly,
+          m.excused,
+          m.unexcused,
+          m.attendanceRate.toFixed(1),
+          m.activeRate.toFixed(1),
+        ].join(',')),
+      ].join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `dochazka-${groupName}-${period}.csv`;
-    link.click();
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `dochazka-treninky-${groupName}-${period}.csv`;
+      link.click();
+    } else {
+      // Export závodů
+      const csv = [
+        ['Jméno', 'Celkem závodů', 'Účast na závodech', 'Účast %'].join(','),
+        ...stats.memberStats.map(m => [
+          m.memberName,
+          m.totalRaces,
+          m.racesPresent,
+          m.racesRate.toFixed(1),
+        ].join(',')),
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `dochazka-zavody-${groupName}-${period}.csv`;
+      link.click();
+    }
   };
 
   const getPeriodLabel = () => {
@@ -363,151 +386,226 @@ const AttendanceStats: React.FC<AttendanceStatsProps> = ({ groupId, groupName })
       </Card>
 
       {/* Tabulka členů */}
-      <TableContainer component={Paper}>
-        <Table size={isMobile ? 'small' : 'medium'}>
-          <TableHead>
-            <TableRow>
-              <TableCell>Člen</TableCell>
-              {!isMobile && <TableCell align="center">Celkem</TableCell>}
-              <TableCell align="center">
-                <Tooltip title="Přítomen">
-                  <PresentIcon fontSize="small" color="success" />
-                </Tooltip>
-              </TableCell>
-              {!isMobile && (
-                <>
-                  <TableCell align="center">
-                    <Tooltip title="Pozdě">
-                      <LateIcon fontSize="small" color="warning" />
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Odešel dříve">
-                      <LeftEarlyIcon fontSize="small" color="warning" />
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Omluven">
-                      <ExcusedIcon fontSize="small" color="info" />
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Neomluven">
-                      <AbsentIcon fontSize="small" color="error" />
-                    </Tooltip>
-                  </TableCell>
-                </>
-              )}
-              <TableCell align="center">Účast</TableCell>
-              <TableCell align="center">Aktivita</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {stats.memberStats.map((member: MemberAttendanceStats) => (
-              <TableRow key={member.memberId} hover>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="medium">
-                    {member.memberName}
-                  </Typography>
-                  {member.memberEmail && (
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {member.memberEmail}
-                    </Typography>
-                  )}
-                </TableCell>
-                
-                {!isMobile && (
-                  <TableCell align="center">
-                    <Chip label={member.totalTrainings} size="small" />
-                  </TableCell>
-                )}
-                
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs value={statsTab} onChange={(_, newValue) => setStatsTab(newValue)}>
+          <Tab label="Tréninky" />
+          <Tab label="Závody" />
+        </Tabs>
+      </Box>
+
+      {/* Tabulka tréninků */}
+      {statsTab === 0 && (
+        <TableContainer component={Paper}>
+          <Table size={isMobile ? 'small' : 'medium'}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Člen</TableCell>
+                {!isMobile && <TableCell align="center">Celkem</TableCell>}
                 <TableCell align="center">
-                  <Chip 
-                    label={member.present} 
-                    size="small" 
-                    color="success"
-                    variant="outlined"
-                  />
+                  <Tooltip title="Přítomen">
+                    <PresentIcon fontSize="small" color="success" />
+                  </Tooltip>
                 </TableCell>
-                
                 {!isMobile && (
                   <>
                     <TableCell align="center">
-                      {member.late > 0 ? (
-                        <Chip label={member.late} size="small" color="warning" variant="outlined" />
-                      ) : (
-                        <Typography variant="body2" color="text.disabled">-</Typography>
-                      )}
+                      <Tooltip title="Pozdě">
+                        <LateIcon fontSize="small" color="warning" />
+                      </Tooltip>
                     </TableCell>
-                    
                     <TableCell align="center">
-                      {member.leftEarly > 0 ? (
-                        <Chip label={member.leftEarly} size="small" color="warning" variant="outlined" />
-                      ) : (
-                        <Typography variant="body2" color="text.disabled">-</Typography>
-                      )}
+                      <Tooltip title="Odešel dříve">
+                        <LeftEarlyIcon fontSize="small" color="warning" />
+                      </Tooltip>
                     </TableCell>
-                    
                     <TableCell align="center">
-                      {member.excused > 0 ? (
-                        <Chip label={member.excused} size="small" color="info" variant="outlined" />
-                      ) : (
-                        <Typography variant="body2" color="text.disabled">-</Typography>
-                      )}
+                      <Tooltip title="Omluven">
+                        <ExcusedIcon fontSize="small" color="info" />
+                      </Tooltip>
                     </TableCell>
-                    
                     <TableCell align="center">
-                      {member.unexcused > 0 ? (
-                        <Chip label={member.unexcused} size="small" color="error" variant="outlined" />
-                      ) : (
-                        <Typography variant="body2" color="text.disabled">-</Typography>
-                      )}
+                      <Tooltip title="Neomluven">
+                        <AbsentIcon fontSize="small" color="error" />
+                      </Tooltip>
                     </TableCell>
                   </>
                 )}
-                
-                <TableCell align="center">
-                  <Chip 
-                    label={`${member.attendanceRate.toFixed(0)}%`}
-                    size="small"
-                    sx={{ 
-                      backgroundColor: getAttendanceColor(member.attendanceRate),
-                      color: 'white',
-                      fontWeight: 'bold',
-                    }}
-                  />
-                </TableCell>
-                
-                <TableCell align="center">
-                  <Chip 
-                    label={`${member.activeRate.toFixed(0)}%`}
-                    size="small"
-                    sx={{ 
-                      backgroundColor: getActiveColor(member.activeRate),
-                      color: 'white',
-                      fontWeight: 'bold',
-                    }}
-                  />
-                </TableCell>
+                <TableCell align="center">Účast</TableCell>
+                <TableCell align="center">Aktivita</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {stats.memberStats.map((member: MemberAttendanceStats) => (
+                <TableRow key={member.memberId} hover>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {member.memberName}
+                    </Typography>
+                    {member.memberEmail && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {member.memberEmail}
+                      </Typography>
+                    )}
+                  </TableCell>
+                  
+                  {!isMobile && (
+                    <TableCell align="center">
+                      <Chip label={member.totalTrainings} size="small" />
+                    </TableCell>
+                  )}
+                  
+                  <TableCell align="center">
+                    <Chip 
+                      label={member.present} 
+                      size="small" 
+                      color="success"
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  
+                  {!isMobile && (
+                    <>
+                      <TableCell align="center">
+                        {member.late > 0 ? (
+                          <Chip label={member.late} size="small" color="warning" variant="outlined" />
+                        ) : (
+                          <Typography variant="body2" color="text.disabled">-</Typography>
+                        )}
+                      </TableCell>
+                      
+                      <TableCell align="center">
+                        {member.leftEarly > 0 ? (
+                          <Chip label={member.leftEarly} size="small" color="warning" variant="outlined" />
+                        ) : (
+                          <Typography variant="body2" color="text.disabled">-</Typography>
+                        )}
+                      </TableCell>
+                      
+                      <TableCell align="center">
+                        {member.excused > 0 ? (
+                          <Chip label={member.excused} size="small" color="info" variant="outlined" />
+                        ) : (
+                          <Typography variant="body2" color="text.disabled">-</Typography>
+                        )}
+                      </TableCell>
+                      
+                      <TableCell align="center">
+                        {member.unexcused > 0 ? (
+                          <Chip label={member.unexcused} size="small" color="error" variant="outlined" />
+                        ) : (
+                          <Typography variant="body2" color="text.disabled">-</Typography>
+                        )}
+                      </TableCell>
+                    </>
+                  )}
+                  
+                  <TableCell align="center">
+                    <Chip 
+                      label={`${member.attendanceRate.toFixed(0)}%`}
+                      size="small"
+                      sx={{ 
+                        backgroundColor: getAttendanceColor(member.attendanceRate),
+                        color: 'white',
+                        fontWeight: 'bold',
+                      }}
+                    />
+                  </TableCell>
+                  
+                  <TableCell align="center">
+                    <Chip 
+                      label={`${member.activeRate.toFixed(0)}%`}
+                      size="small"
+                      sx={{ 
+                        backgroundColor: getActiveColor(member.activeRate),
+                        color: 'white',
+                        fontWeight: 'bold',
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      {/* Tabulka závodů */}
+      {statsTab === 1 && (
+        <TableContainer component={Paper}>
+          <Table size={isMobile ? 'small' : 'medium'}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Člen</TableCell>
+                <TableCell align="center">Celkem</TableCell>
+                <TableCell align="center">Účast</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {stats.memberStats.map((member: MemberAttendanceStats) => (
+                <TableRow key={member.memberId} hover>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {member.memberName}
+                    </Typography>
+                    {member.memberEmail && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {member.memberEmail}
+                      </Typography>
+                    )}
+                  </TableCell>
+                  
+                  <TableCell align="center">
+                    <Chip 
+                      label={member.totalRaces} 
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                    />
+                  </TableCell>
+                  
+                  <TableCell align="center">
+                    {member.totalRaces > 0 ? (
+                      <Chip 
+                        label={`${member.racesRate.toFixed(0)}%`}
+                        size="small"
+                        sx={{ 
+                          backgroundColor: getAttendanceColor(member.racesRate),
+                          color: 'white',
+                          fontWeight: 'bold',
+                        }}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.disabled">-</Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {/* Legenda */}
       <Box sx={{ mt: 2, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
         <Typography variant="caption" display="block" gutterBottom fontWeight="bold">
           Legenda:
         </Typography>
-        <Box display="flex" gap={3} flexWrap="wrap">
-          <Typography variant="caption">
-            <strong>Účast:</strong> Podíl přítomných ze všech tréninků
-          </Typography>
-          <Typography variant="caption">
-            <strong>Aktivita:</strong> Podíl aktivních účastí (přítomen + pozdě + odešel dříve)
-          </Typography>
+        <Box display="flex" flexDirection="column" gap={1}>
+          {statsTab === 0 && (
+            <>
+              <Typography variant="caption">
+                <strong>Účast:</strong> Podíl přítomných ze všech tréninků (bez závodů)
+              </Typography>
+              <Typography variant="caption">
+                <strong>Aktivita:</strong> Podíl aktivních účastí (přítomen + pozdě + odešel dříve)
+              </Typography>
+            </>
+          )}
+          {statsTab === 1 && (
+            <Typography variant="caption">
+              <strong>Účast:</strong> Podíl účasti na závodech započítaných do statistik
+            </Typography>
+          )}
         </Box>
         <Box display="flex" gap={2} flexWrap="wrap" sx={{ mt: 1 }}>
           <Chip label="90%+ výborná" size="small" sx={{ backgroundColor: theme.palette.success.main, color: 'white' }} />

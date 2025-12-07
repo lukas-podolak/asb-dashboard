@@ -31,6 +31,10 @@ import {
   Checkbox,
   ListItemText,
   FormHelperText,
+  FormControlLabel,
+  List,
+  ListItem,
+  ListItemButton,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -94,6 +98,8 @@ const TrainingPlans: React.FC = () => {
   const [openNoteDialog, setOpenNoteDialog] = useState(false);
   const [openDayDetailDialog, setOpenDayDetailDialog] = useState(false);
   const [openAttendanceDialog, setOpenAttendanceDialog] = useState(false);
+  const [openGroupSelectDialog, setOpenGroupSelectDialog] = useState(false);
+  const [multiGroupPlans, setMultiGroupPlans] = useState<TrainingPlan[]>([]);
   const [openStatsDialog, setOpenStatsDialog] = useState(false);
   const [statsGroupId, setStatsGroupId] = useState<string | null>(null);
   const [attendancePlan, setAttendancePlan] = useState<TrainingPlan | null>(null);
@@ -118,6 +124,7 @@ const TrainingPlans: React.FC = () => {
     date: new Date(),
     groupId: '',
     raceProposalsUrl: '',
+    excludeFromStats: false,
     individualAccessMembers: [],
   });
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]); // Pro multi-select při vytváření
@@ -189,10 +196,13 @@ const TrainingPlans: React.FC = () => {
       
       // Pokud jsou vybrány více skupin, vytvoř trénink pro každou
       if (selectedGroupIds.length > 0) {
+        // Generovat společný multiGroupId pro všechny plány
+        const multiGroupId = `mg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
         await Promise.all(
           selectedGroupIds.map(groupId =>
             createTrainingPlan(
-              { ...formData, groupId },
+              { ...formData, groupId, multiGroupId },
               currentUser.uid
             )
           )
@@ -233,8 +243,16 @@ const TrainingPlans: React.FC = () => {
       setError('');
       if (!selectedPlan) return;
       
-      await deleteTrainingPlan(selectedPlan.id);
-      setSuccess('Trénink byl úspěšně smazán');
+      // Pokud je to multi-group plán, smazat všechny plány se stejným multiGroupId
+      const groupPlans = (selectedPlan as any).groupPlans as TrainingPlan[] | undefined;
+      if (groupPlans && groupPlans.length > 0) {
+        await Promise.all(groupPlans.map(p => deleteTrainingPlan(p.id)));
+        setSuccess(`Trénink byl úspěšně smazán pro ${groupPlans.length} skupin`);
+      } else {
+        await deleteTrainingPlan(selectedPlan.id);
+        setSuccess('Trénink byl úspěšně smazán');
+      }
+      
       setOpenDeleteDialog(false);
       setSelectedPlan(null);
       await loadData();
@@ -267,8 +285,23 @@ const TrainingPlans: React.FC = () => {
       const newDate = new Date(plan.date);
       newDate.setDate(newDate.getDate() + 7); // Za týden
       
-      await duplicateTrainingPlan(plan.id, newDate, currentUser.uid);
-      setSuccess('Trénink byl duplikován');
+      // Pokud je to multi-group plán, duplikovat všechny plány se stejným multiGroupId
+      const groupPlans = (plan as any).groupPlans as TrainingPlan[] | undefined;
+      if (groupPlans && groupPlans.length > 0) {
+        // Generovat nový multiGroupId pro duplikované plány
+        const newMultiGroupId = `mg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        await Promise.all(
+          groupPlans.map(p => 
+            duplicateTrainingPlan(p.id, newDate, currentUser.uid, newMultiGroupId)
+          )
+        );
+        setSuccess(`Trénink byl duplikován pro ${groupPlans.length} skupin`);
+      } else {
+        await duplicateTrainingPlan(plan.id, newDate, currentUser.uid);
+        setSuccess('Trénink byl duplikován');
+      }
+      
       await loadData();
     } catch (err: any) {
       setError(err.message);
@@ -297,6 +330,7 @@ const TrainingPlans: React.FC = () => {
       date: plan.date,
       groupId: plan.groupId,
       raceProposalsUrl: plan.raceProposalsUrl || '',
+      excludeFromStats: plan.excludeFromStats || false,
       individualAccessMembers: plan.individualAccessMembers || [],
     });
     setOpenEditDialog(true);
@@ -315,8 +349,15 @@ const TrainingPlans: React.FC = () => {
   };
 
   const openAttendanceForPlan = (plan: TrainingPlan) => {
-    setAttendancePlan(plan);
-    setOpenAttendanceDialog(true);
+    // Pokud je to multi-group plán, zobrazit výběr skupiny
+    const groupPlans = (plan as any).groupPlans as TrainingPlan[] | undefined;
+    if (groupPlans && groupPlans.length > 1) {
+      setMultiGroupPlans(groupPlans);
+      setOpenGroupSelectDialog(true);
+    } else {
+      setAttendancePlan(plan);
+      setOpenAttendanceDialog(true);
+    }
   };
 
   const openStatsForGroup = (groupId: string) => {
@@ -332,6 +373,7 @@ const TrainingPlans: React.FC = () => {
       date: new Date(),
       groupId: myGroups.length > 0 ? myGroups[0].id : '',
       raceProposalsUrl: '',
+      excludeFromStats: false,
       individualAccessMembers: [],
     });
     setSelectedGroupIds([]);
@@ -361,8 +403,42 @@ const TrainingPlans: React.FC = () => {
     
     return Array.from(grouped.entries()).map(([date, plans]) => ({
       date: new Date(date),
-      plans: plans.sort((a, b) => a.date.getTime() - b.date.getTime()),
+      plans: mergeMultiGroupPlans(plans.sort((a, b) => a.date.getTime() - b.date.getTime())),
     }));
+  };
+
+  // Sloučit plány se stejným multiGroupId do jednoho záznamu s více skupinami
+  const mergeMultiGroupPlans = (plans: TrainingPlan[]): TrainingPlan[] => {
+    const merged = new Map<string, TrainingPlan>();
+    const multiGroupMap = new Map<string, TrainingPlan[]>();
+    
+    plans.forEach(plan => {
+      if (plan.multiGroupId) {
+        if (!multiGroupMap.has(plan.multiGroupId)) {
+          multiGroupMap.set(plan.multiGroupId, []);
+        }
+        multiGroupMap.get(plan.multiGroupId)!.push(plan);
+      } else {
+        merged.set(plan.id, plan);
+      }
+    });
+    
+    // Zpracovat multi-group plány
+    multiGroupMap.forEach((groupPlans, multiGroupId) => {
+      // Použít první plán jako reprezentanta a přidat informace o všech skupinách
+      const representativePlan = { ...groupPlans[0] };
+      
+      // Přidat informaci o všech skupinách do groupName
+      const allGroupNames = groupPlans.map(p => p.groupName).join(', ');
+      representativePlan.groupName = allGroupNames;
+      
+      // Uložit všechny plány jako vlastnost pro případné další operace
+      (representativePlan as any).groupPlans = groupPlans;
+      
+      merged.set(multiGroupId, representativePlan);
+    });
+    
+    return Array.from(merged.values());
   };
 
   const filteredUpcoming = selectedGroup === 'all' 
@@ -557,6 +633,15 @@ const TrainingPlans: React.FC = () => {
                                 color={plan.type === TT.RACE ? 'warning' : (plan.type === TT.COMMON ? 'primary' : 'secondary')}
                                 sx={{ mr: 1 }}
                               />
+                              {(plan as any).groupPlans && (plan as any).groupPlans.length > 1 && (
+                                <Chip 
+                                  label={`${(plan as any).groupPlans.length} skupin`}
+                                  size="small" 
+                                  color="info"
+                                  variant="outlined"
+                                  sx={{ mr: 1 }}
+                                />
+                              )}
                               {plan.status === TrainingStatus.COMPLETED && (
                                 <Chip 
                                   icon={<CheckCircleIcon />}
@@ -844,6 +929,15 @@ const TrainingPlans: React.FC = () => {
                             </Box>
                             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                               {plan.groupName} • {plan.type === TT.RACE ? '🏆 ' : ''}{plan.type}
+                              {(plan as any).groupPlans && (plan as any).groupPlans.length > 1 && (
+                                <> • <Chip 
+                                  label={`${(plan as any).groupPlans.length} skupin`}
+                                  size="small" 
+                                  color="info"
+                                  variant="outlined"
+                                  sx={{ ml: 0.5, height: '16px', fontSize: '0.65rem' }}
+                                /></>
+                              )}
                             </Typography>
 
                             {plan.type === TT.RACE && plan.raceProposalsUrl && (
@@ -1202,16 +1296,28 @@ const TrainingPlans: React.FC = () => {
             </FormControl>
             
             {formData.type === TT.RACE && (
-              <TextField
-                margin="dense"
-                label="Odkaz na propozice"
-                type="url"
-                fullWidth
-                value={formData.raceProposalsUrl || ''}
-                onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
-                placeholder="https://example.com/propozice.pdf"
-                helperText="Volitelné: Odkaz na propozice závodu"
-              />
+              <>
+                <TextField
+                  margin="dense"
+                  label="Odkaz na propozice"
+                  type="url"
+                  fullWidth
+                  value={formData.raceProposalsUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
+                  placeholder="https://example.com/propozice.pdf"
+                  helperText="Volitelné: Odkaz na propozice závodu"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.excludeFromStats || false}
+                      onChange={(e) => setFormData({ ...formData, excludeFromStats: e.target.checked })}
+                    />
+                  }
+                  label="Vyloučit tento závod ze statistik docházky"
+                  sx={{ mt: 1 }}
+                />
+              </>
             )}
             
             {formData.type === TT.COMMON && selectedGroupIds.length === 1 && formData.groupId && (
@@ -1343,16 +1449,28 @@ const TrainingPlans: React.FC = () => {
             </FormControl>
             
             {formData.type === TT.RACE && (
-              <TextField
-                margin="dense"
-                label="Odkaz na propozice"
-                type="url"
-                fullWidth
-                value={formData.raceProposalsUrl || ''}
-                onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
-                placeholder="https://example.com/propozice.pdf"
-                helperText="Volitelné: Odkaz na propozice závodu"
-              />
+              <>
+                <TextField
+                  margin="dense"
+                  label="Odkaz na propozice"
+                  type="url"
+                  fullWidth
+                  value={formData.raceProposalsUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, raceProposalsUrl: e.target.value })}
+                  placeholder="https://example.com/propozice.pdf"
+                  helperText="Volitelné: Odkaz na propozice závodu"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.excludeFromStats || false}
+                      onChange={(e) => setFormData({ ...formData, excludeFromStats: e.target.checked })}
+                    />
+                  }
+                  label="Vyloučit tento závod ze statistik docházky"
+                  sx={{ mt: 1 }}
+                />
+              </>
             )}
             
             {formData.type === TT.COMMON && formData.groupId && (
@@ -1539,6 +1657,15 @@ const TrainingPlans: React.FC = () => {
 
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         {plan.groupName} • {plan.type === TT.RACE ? '🏆 ' : ''}{plan.type}
+                        {(plan as any).groupPlans && (plan as any).groupPlans.length > 1 && (
+                          <> • <Chip 
+                            label={`${(plan as any).groupPlans.length} skupin`}
+                            size="small" 
+                            color="info"
+                            variant="outlined"
+                            sx={{ ml: 0.5 }}
+                          /></>
+                        )}
                       </Typography>
 
                       {plan.type === TT.RACE && plan.raceProposalsUrl && (
@@ -1770,6 +1897,62 @@ const TrainingPlans: React.FC = () => {
             }}
           />
         )}
+
+        {/* Group Selection Dialog for Multi-Group Plans */}
+        <Dialog
+          open={openGroupSelectDialog}
+          onClose={() => {
+            setOpenGroupSelectDialog(false);
+            setMultiGroupPlans([]);
+          }}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Vyberte skupinu</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Tento trénink je naplánován pro více skupin. Vyberte skupinu, pro kterou chcete zadat docházku.
+            </Typography>
+            <List>
+              {multiGroupPlans.map(plan => (
+                <ListItem
+                  key={plan.id}
+                  disablePadding
+                  sx={{ mb: 1 }}
+                >
+                  <ListItemButton
+                    onClick={() => {
+                      setOpenGroupSelectDialog(false);
+                      setAttendancePlan(plan);
+                      setOpenAttendanceDialog(true);
+                      setMultiGroupPlans([]);
+                    }}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                      },
+                    }}
+                  >
+                    <Typography variant="body1" fontWeight="medium">
+                      {plan.groupName}
+                    </Typography>
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => {
+              setOpenGroupSelectDialog(false);
+              setMultiGroupPlans([]);
+            }}>
+              Zrušit
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Attendance Stats Dialog */}
         <Dialog

@@ -212,6 +212,7 @@ export const getMemberAttendanceStats = async (
   const historical = await getHistoricalPlans(undefined, startDate, endDate);
   
   // Filtrovat tréninky podle groupId a datumového období (pouze do dneška)
+  // Oddělit tréninky a závody
   const allPlans = historical.filter(p => {
     if (p.groupId !== groupId) return false;
     if (p.date > today) return false; // Vyloučit budoucí tréninky
@@ -219,6 +220,10 @@ export const getMemberAttendanceStats = async (
     if (endDate && p.date > endDate) return false;
     return true;
   });
+  
+  // Rozdělit na tréninky a závody
+  const trainingPlans = allPlans.filter(p => p.type !== 'závod');
+  const racePlans = allPlans.filter(p => p.type === 'závod' && !p.excludeFromStats); // Pouze závody započítané do statistik
 
   // Získat docházku člena
   const q = query(
@@ -243,7 +248,7 @@ export const getMemberAttendanceStats = async (
     memberId,
     memberName: records[0]?.memberName || '',
     memberEmail,
-    totalTrainings: allPlans.length,
+    totalTrainings: trainingPlans.length,
     present: 0,
     late: 0,
     leftEarly: 0,
@@ -252,12 +257,15 @@ export const getMemberAttendanceStats = async (
     unknown: 0,
     attendanceRate: 0,
     activeRate: 0,
+    totalRaces: racePlans.length,
+    racesPresent: 0,
+    racesRate: 0,
   };
 
-  // Spočítat statistiky
+  // Spočítat statistiky pro tréninky
   const recordMap = new Map(records.map(r => [r.trainingPlanId, r]));
   
-  allPlans.forEach(plan => {
+  trainingPlans.forEach(plan => {
     const record = recordMap.get(plan.id);
     if (!record) {
       stats.unknown++;
@@ -271,10 +279,22 @@ export const getMemberAttendanceStats = async (
       }
     }
   });
+  
+  // Spočítat statistiky pro závody
+  racePlans.forEach(plan => {
+    const record = recordMap.get(plan.id);
+    if (record && (record.status === AS.PRESENT || record.status === AS.LATE || record.status === AS.LEFT_EARLY)) {
+      stats.racesPresent++;
+    }
+  });
 
   if (stats.totalTrainings > 0) {
     stats.attendanceRate = ((stats.present + stats.late + stats.leftEarly) / stats.totalTrainings) * 100;
     stats.activeRate = (stats.present / stats.totalTrainings) * 100;
+  }
+  
+  if (stats.totalRaces > 0) {
+    stats.racesRate = (stats.racesPresent / stats.totalRaces) * 100;
   }
 
   return stats;
