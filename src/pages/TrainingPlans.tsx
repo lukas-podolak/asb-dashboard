@@ -28,6 +28,9 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Checkbox,
+  ListItemText,
+  FormHelperText,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -115,6 +118,7 @@ const TrainingPlans: React.FC = () => {
     date: new Date(),
     groupId: '',
     raceProposalsUrl: '',
+    individualAccessMembers: [],
   });
   const [noteText, setNoteText] = useState('');
 
@@ -277,6 +281,7 @@ const TrainingPlans: React.FC = () => {
       date: plan.date,
       groupId: plan.groupId,
       raceProposalsUrl: plan.raceProposalsUrl || '',
+      individualAccessMembers: plan.individualAccessMembers || [],
     });
     setOpenEditDialog(true);
   };
@@ -1170,6 +1175,45 @@ const TrainingPlans: React.FC = () => {
               />
             )}
             
+            {formData.type === TT.COMMON && formData.groupId && (
+              <FormControl fullWidth margin="dense">
+                <InputLabel>Individuální přístup pro členy</InputLabel>
+                <Select
+                  multiple
+                  value={formData.individualAccessMembers || []}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numericValue = typeof value === 'string' ? [] : value.map(v => typeof v === 'number' ? v : Number(v));
+                    setFormData({ 
+                      ...formData, 
+                      individualAccessMembers: numericValue
+                    });
+                  }}
+                  label="Individuální přístup pro členy"
+                  renderValue={(selected) => {
+                    const selectedGroup = myGroups.find(g => g.id === formData.groupId);
+                    if (!selectedGroup) return '';
+                    return selected
+                      .map(id => selectedGroup.members.find(m => m.id === id)?.name)
+                      .filter(Boolean)
+                      .join(', ');
+                  }}
+                >
+                  {myGroups
+                    .find(g => g.id === formData.groupId)
+                    ?.members.map(member => (
+                      <MenuItem key={member.id} value={member.id}>
+                        <Checkbox checked={(formData.individualAccessMembers || []).some(id => id === (typeof member.id === 'number' ? member.id : Number(member.id)))} />
+                        <ListItemText primary={member.name} />
+                      </MenuItem>
+                    ))}
+                </Select>
+                <FormHelperText>
+                  Vybraní členové uvidí tento společný trénink jako individuální a mohou přidat poznámku
+                </FormHelperText>
+              </FormControl>
+            )}
+            
             <DatePicker
               label="Datum *"
               value={formData.date}
@@ -1264,6 +1308,45 @@ const TrainingPlans: React.FC = () => {
                 placeholder="https://example.com/propozice.pdf"
                 helperText="Volitelné: Odkaz na propozice závodu"
               />
+            )}
+            
+            {formData.type === TT.COMMON && formData.groupId && (
+              <FormControl fullWidth margin="dense">
+                <InputLabel>Individuální přístup pro členy</InputLabel>
+                <Select
+                  multiple
+                  value={formData.individualAccessMembers || []}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numericValue = typeof value === 'string' ? [] : value.map(v => typeof v === 'number' ? v : Number(v));
+                    setFormData({ 
+                      ...formData, 
+                      individualAccessMembers: numericValue
+                    });
+                  }}
+                  label="Individuální přístup pro členy"
+                  renderValue={(selected) => {
+                    const selectedGroup = myGroups.find(g => g.id === formData.groupId);
+                    if (!selectedGroup) return '';
+                    return selected
+                      .map(id => selectedGroup.members.find(m => m.id === id)?.name)
+                      .filter(Boolean)
+                      .join(', ');
+                  }}
+                >
+                  {myGroups
+                    .find(g => g.id === formData.groupId)
+                    ?.members.map(member => (
+                      <MenuItem key={member.id} value={member.id}>
+                        <Checkbox checked={(formData.individualAccessMembers || []).some(id => id === (typeof member.id === 'number' ? member.id : Number(member.id)))} />
+                        <ListItemText primary={member.name} />
+                      </MenuItem>
+                    ))}
+                </Select>
+                <FormHelperText>
+                  Vybraní členové uvidí tento společný trénink jako individuální a mohou přidat poznámku
+                </FormHelperText>
+              </FormControl>
             )}
             
             <DatePicker
