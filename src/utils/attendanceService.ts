@@ -3,6 +3,7 @@ import {
   doc,
   getDocs,
   updateDoc,
+  setDoc,
   query,
   where,
   Timestamp,
@@ -41,6 +42,53 @@ const mapFirestoreToAttendance = (id: string, data: any): AttendanceRecord => {
     updatedAt: data.updatedAt?.toDate() || new Date(),
     updatedBy: data.updatedBy,
   };
+};
+
+// Zaznamenání docházky pro jednoho člena (bez mazání ostatních)
+export const recordSingleMemberAttendance = async (
+  trainingPlanId: string,
+  groupId: string,
+  memberId: number,
+  memberName: string,
+  status: AttendanceStatus,
+  recordedBy: string
+): Promise<void> => {
+  const now = Timestamp.now();
+
+  // Zkontrolovat, zda už pro tohoto člena existuje záznam
+  const existingQuery = query(
+    collection(db, COLLECTION_NAME),
+    where('trainingPlanId', '==', trainingPlanId),
+    where('memberId', '==', memberId)
+  );
+  const existingDocs = await getDocs(existingQuery);
+
+  if (existingDocs.empty) {
+    // Vytvořit nový záznam
+    const docRef = doc(collection(db, COLLECTION_NAME));
+    await setDoc(docRef, {
+      trainingPlanId,
+      groupId,
+      memberId,
+      memberName,
+      status,
+      note: null,
+      arrivedAt: null,
+      leftAt: null,
+      recordedAt: now,
+      recordedBy,
+      updatedAt: now,
+      updatedBy: recordedBy,
+    });
+  } else {
+    // Aktualizovat existující záznam
+    const existingDocRef = existingDocs.docs[0].ref;
+    await updateDoc(existingDocRef, {
+      status,
+      updatedAt: now,
+      updatedBy: recordedBy,
+    });
+  }
 };
 
 // Hromadné zaznamenání docházky pro jeden trénink

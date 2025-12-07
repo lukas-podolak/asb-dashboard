@@ -1,7 +1,7 @@
 import { doc, updateDoc, Timestamp, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import type { MemberTrainingNote, TrainingPlan } from '../types/trainingPlan';
-import { recordBulkAttendance } from './attendanceService';
+import { recordSingleMemberAttendance } from './attendanceService';
 import { AttendanceStatus } from '../types/attendance';
 
 const TRAINING_PLANS_COLLECTION = 'trainingPlans';
@@ -78,16 +78,15 @@ export const addMemberNoteToTraining = async (
     const shouldRecordAttendance = completed && !wasCompleted;
     
     if (shouldRecordAttendance) {
-      const bulkInput = {
-        trainingPlanId: trainingPlanId,
-        groupId: training.groupId,
-        attendances: [{ 
-          memberId, 
-          memberName,
-          status: AttendanceStatus.PRESENT 
-        }],
-      };
-      await recordBulkAttendance(bulkInput, userId);
+      // Použít novou funkci pro záznam pouze jednoho člena
+      await recordSingleMemberAttendance(
+        trainingPlanId,
+        training.groupId,
+        memberId,
+        memberName,
+        AttendanceStatus.PRESENT,
+        userId
+      );
     }
   } catch (error) {
     console.error('Chyba při přidávání poznámky člena:', error);
