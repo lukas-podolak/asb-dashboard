@@ -37,6 +37,7 @@ const mapFirestoreToTrainingPlan = (id: string, data: any): TrainingPlan => {
     executedAt: data.executedAt?.toDate(),
     executedBy: data.executedBy,
     raceProposalsUrl: data.raceProposalsUrl,
+    individualAccessMembers: data.individualAccessMembers || [],
     memberNotes: data.memberNotes ? data.memberNotes.map((note: any) => ({
       memberId: note.memberId,
       memberName: note.memberName,
@@ -199,6 +200,11 @@ export const createTrainingPlan = async (
     newPlan.raceProposalsUrl = data.raceProposalsUrl.trim();
   }
   
+  // Přidat individuální přístup pro vybrané členy (pouze pro společné tréninky)
+  if (data.individualAccessMembers && data.individualAccessMembers.length > 0) {
+    newPlan.individualAccessMembers = data.individualAccessMembers;
+  }
+  
   const docRef = await addDoc(collection(db, COLLECTION_NAME), newPlan);
   return docRef.id;
 };
@@ -226,6 +232,9 @@ export const updateTrainingPlan = async (
   if (data.type !== undefined) updateData.type = data.type;
   if (data.raceProposalsUrl !== undefined) {
     updateData.raceProposalsUrl = data.raceProposalsUrl ? data.raceProposalsUrl.trim() : null;
+  }
+  if (data.individualAccessMembers !== undefined) {
+    updateData.individualAccessMembers = data.individualAccessMembers.length > 0 ? data.individualAccessMembers : null;
   }
   if (data.date !== undefined) {
     // Normalizovat datum na poledne aby se vyhnuli timezone problémům
@@ -360,6 +369,11 @@ export const duplicateTrainingPlan = async (
   // Zkopírovat odkaz na propozice pro závody
   if (original.raceProposalsUrl) {
     newPlan.raceProposalsUrl = original.raceProposalsUrl;
+  }
+  
+  // Zkopírovat individuální přístup členů
+  if (original.individualAccessMembers && original.individualAccessMembers.length > 0) {
+    newPlan.individualAccessMembers = original.individualAccessMembers;
   }
   
   const docRef = await addDoc(collection(db, COLLECTION_NAME), newPlan);

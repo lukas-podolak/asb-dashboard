@@ -208,9 +208,15 @@ const MemberDashboard: React.FC = () => {
   };
 
   const canAddNote = (training: TrainingPlan & { groupName: string }) => {
-    // Poznámky lze přidávat k individuálním tréningům a závodům
-    // (společné tréninky COMMON nemají poznámky členů)
-    if (training.type === TrainingType.COMMON) return false;
+    // Poznámky lze přidávat k individuálním tréningům, závodům
+    // a společným tréningům s individuálním přístupem
+    if (training.type === TrainingType.COMMON) {
+      // Pro společné tréninky kontrolovat, zda má člen individuální přístup
+      if (!currentMemberId) return false;
+      if (!training.individualAccessMembers || !training.individualAccessMembers.includes(currentMemberId)) {
+        return false;
+      }
+    }
     
     // Pouze tréninky dnes nebo v minulosti
     const trainingDate = training.date instanceof Date ? training.date : new Date(training.date);
@@ -218,6 +224,15 @@ const MemberDashboard: React.FC = () => {
     today.setHours(23, 59, 59, 999);
     
     return trainingDate <= today;
+  };
+
+  // Určit, zda se trénink zobrazuje jako individuální pro aktuálního člena
+  const isIndividualForMember = (training: TrainingPlan & { groupName: string }) => {
+    if (training.type === TrainingType.INDIVIDUAL) return true;
+    if (training.type === TrainingType.COMMON && currentMemberId) {
+      return training.individualAccessMembers?.includes(currentMemberId) || false;
+    }
+    return false;
   };
 
   const getMemberNote = (training: TrainingPlan & { groupName: string }) => {
@@ -430,7 +445,7 @@ const MemberDashboard: React.FC = () => {
               {todayTrainings.map((training) => {
                 const trainingDate = training.date instanceof Date ? training.date : new Date(training.date);
                 const timeStr = format(trainingDate, 'HH:mm');
-                const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                const isIndividual = isIndividualForMember(training);
                 const isRace = training.type === TrainingType.RACE;
                 const canAddNoteToThis = canAddNote(training);
                 const memberNote = getMemberNote(training);
@@ -558,7 +573,7 @@ const MemberDashboard: React.FC = () => {
                 const trainingDate = training.date instanceof Date ? training.date : new Date(training.date);
                 const dayName = format(trainingDate, 'EEEE', { locale: cs });
                 const dateStr = format(trainingDate, 'd. MMMM yyyy', { locale: cs });
-                const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                const isIndividual = isIndividualForMember(training);
                 const isRace = training.type === TrainingType.RACE;
                 
                 return (
@@ -658,7 +673,7 @@ const MemberDashboard: React.FC = () => {
                   const trainingDate = training.date instanceof Date ? training.date : new Date(training.date);
                   const dayName = format(trainingDate, 'EEEE', { locale: cs });
                   const dateStr = format(trainingDate, 'd. MMMM yyyy', { locale: cs });
-                  const isIndividual = training.type === TrainingType.INDIVIDUAL;
+                  const isIndividual = isIndividualForMember(training);
                   const isRace = training.type === TrainingType.RACE;
                   const canAddNoteToThis = canAddNote(training);
                   const memberNote = getMemberNote(training);
@@ -787,7 +802,7 @@ const MemberDashboard: React.FC = () => {
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
               {selectedDayPlans.map((plan) => {
-                const isIndividual = plan.type === TrainingType.INDIVIDUAL;
+                const isIndividual = isIndividualForMember(plan);
                 const isRace = plan.type === TrainingType.RACE;
                 
                 return (
