@@ -508,6 +508,20 @@ const MemberDashboard: React.FC = () => {
                         </>
                       )}
 
+                      {training.executionNote && (
+                        <>
+                          <Divider sx={{ my: 1 }} />
+                          <Paper sx={{ p: 1.5, bgcolor: 'info.light', border: '1px solid', borderColor: 'info.main' }}>
+                            <Typography variant="caption" fontWeight="bold" display="block" mb={0.5} color="info.dark">
+                              💬 Poznámka trenéra:
+                            </Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {training.executionNote}
+                            </Typography>
+                          </Paper>
+                        </>
+                      )}
+
                       {memberNote && (
                         <>
                           <Divider sx={{ my: 1 }} />
@@ -633,6 +647,20 @@ const MemberDashboard: React.FC = () => {
                           </Typography>
                         </>
                       )}
+
+                      {training.executionNote && (
+                        <>
+                          <Divider sx={{ my: 1 }} />
+                          <Paper sx={{ p: 1.5, bgcolor: 'info.light', border: '1px solid', borderColor: 'info.main' }}>
+                            <Typography variant="caption" fontWeight="bold" display="block" mb={0.5} color="info.dark">
+                              💬 Poznámka trenéra:
+                            </Typography>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                              {training.executionNote}
+                            </Typography>
+                          </Paper>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -733,6 +761,20 @@ const MemberDashboard: React.FC = () => {
                             <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
                               <strong>Program:</strong> {training.description}
                             </Typography>
+                          </>
+                        )}
+
+                        {training.executionNote && (
+                          <>
+                            <Divider sx={{ my: 1 }} />
+                            <Paper sx={{ p: 1.5, bgcolor: 'info.light', border: '1px solid', borderColor: 'info.main' }}>
+                              <Typography variant="caption" fontWeight="bold" display="block" mb={0.5} color="info.dark">
+                                💬 Poznámka trenéra:
+                              </Typography>
+                              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                {training.executionNote}
+                              </Typography>
+                            </Paper>
                           </>
                         )}
 
@@ -856,9 +898,20 @@ const MemberDashboard: React.FC = () => {
                       )}
 
                       {plan.description && (
-                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
                           {plan.description}
                         </Typography>
+                      )}
+
+                      {plan.executionNote && (
+                        <Paper sx={{ p: 1.5, bgcolor: 'info.light', border: '1px solid', borderColor: 'info.main' }}>
+                          <Typography variant="caption" fontWeight="bold" display="block" mb={0.5} color="info.dark">
+                            💬 Poznámka trenéra:
+                          </Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {plan.executionNote}
+                          </Typography>
+                        </Paper>
                       )}
                     </CardContent>
                   </Card>
