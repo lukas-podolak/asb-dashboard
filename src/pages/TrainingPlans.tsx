@@ -394,15 +394,20 @@ const TrainingPlans: React.FC = () => {
     const grouped = new Map<string, TrainingPlan[]>();
     
     plans.forEach(plan => {
-      const dateKey = plan.date.toISOString().split('T')[0];
+      // Použít lokální datum bez UTC konverze
+      const year = plan.date.getFullYear();
+      const month = String(plan.date.getMonth() + 1).padStart(2, '0');
+      const day = String(plan.date.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+      
       if (!grouped.has(dateKey)) {
         grouped.set(dateKey, []);
       }
       grouped.get(dateKey)!.push(plan);
     });
     
-    return Array.from(grouped.entries()).map(([date, plans]) => ({
-      date: new Date(date),
+    return Array.from(grouped.entries()).map(([dateKey, plans]) => ({
+      date: new Date(dateKey + 'T12:00:00'), // Noon to avoid timezone issues
       plans: mergeMultiGroupPlans(plans.sort((a, b) => a.date.getTime() - b.date.getTime())),
     }));
   };
@@ -487,10 +492,17 @@ const TrainingPlans: React.FC = () => {
   };
 
   const getPlansForDay = (date: Date): TrainingPlan[] => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Porovnávat lokální data bez UTC konverze
+    const targetYear = date.getFullYear();
+    const targetMonth = date.getMonth();
+    const targetDay = date.getDate();
+    
     return filteredHistorical.filter(plan => {
-      const planDateStr = plan.date.toISOString().split('T')[0];
-      return planDateStr === dateStr;
+      const planYear = plan.date.getFullYear();
+      const planMonth = plan.date.getMonth();
+      const planDay = plan.date.getDate();
+      
+      return planYear === targetYear && planMonth === targetMonth && planDay === targetDay;
     });
   };
 
